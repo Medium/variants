@@ -1,0 +1,20 @@
+{
+  "name" : "variants",
+  "version" : "0.1.0",
+  "description" : "Framework for declaring dynamic flags based on pluggable conditions.",
+  "keywords" : ["node", "variants", "experiments", "mods"],
+  "repository" : {
+    "type" : "git",
+    "url" : "http://github.com/Obvious/variants.git"
+  },
+  "homepage" : "https://github.com/Obvious/variants",
+  "author" : {
+    "name" : "David Byttow",
+    "email" : "david@obvious.com",
+    "url" : "https://github.com/guitardave24"
+  },
+  "main" : "./lib/variants.js",
+  "directories": {
+    "lib": "./lib"
+  }
+}
