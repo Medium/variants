@@ -13,6 +13,7 @@ var fs = require('fs')
  */
 module.exports = {
     getFlagValue: getFlagValue
+    , registerFlag: registerFlag
     , loadFile: loadFile
     , loadJson: loadJson
     , registerConditionType: registerConditionType
@@ -50,7 +51,28 @@ var registeredConditionSpecs = {}
 var flagToVariantIdsMap = {}
 
 
+/**
+ * Registered variant flags and their default values.
+ * @type {Object.<*>}
+ */
+var defaultValues = {}
+
+
 // TODO(david): Add optional file watches.
+
+
+/**
+ * Evaluates the flag value based on the given context object.
+ * @param {string} flagName Name of the variant flag to get the value for
+ * @param {*} defaultValue Default value of the flag.
+ */
+function registerFlag(flagName, defaultValue) {
+  if (flagName in flagToVariantIdsMap || flagName in defaultValues) {
+    throw new Error('Variant flag already registered: ' + flagName)
+  }
+  defaultValues[flagName] = defaultValue
+  flagToVariantIdsMap[flagName] = {}
+}
 
 
 /**
@@ -60,13 +82,13 @@ var flagToVariantIdsMap = {}
  * @return {*} Value specified in the variants JSON file or undefined if no conditions were met
  */
 function getFlagValue(flagName, context) {
-  context = context || {}
   var variantIds = flagToVariantIdsMap[flagName]
   if (!variantIds) {
     throw new Error('Variant flag not defined: ' + flagName)
   }
 
-  var value = undefined
+  context = context || {}
+  var value = defaultValues[flagName]
 
   // TODO(david): Partial ordering
   for (var id in variantIds) {
@@ -245,22 +267,24 @@ function callbackOrThrow(err, callback) {
  * @param {Array.<Variant>} variants
  */
 function registerVariants(variants) {
+  // TODO(david): Make this non-destructive.
   for (var i = 0; i < variants.length; ++i) {
     var v = variants[i]
     if (!!registeredVariants[v.id]) {
       throw new Error('Variant already registered with id: ' + v.id)
     }
-    registeredVariants[v.id] = v
 
     for (var j = 0; j < v.mods.length; ++j) {
       var flagName = v.mods[j].flagName
 
       // Simply place a marker indicating that this flag name maps to the given variant.
       if (!(flagName in flagToVariantIdsMap)) {
-        flagToVariantIdsMap[flagName] = {}
+        throw new Error('Flag has not been registered: ' + flagName)
       }
       flagToVariantIdsMap[flagName][v.id] = true
     }
+
+    registeredVariants[v.id] = v
   }
 }
 
