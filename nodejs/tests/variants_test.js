@@ -6,6 +6,7 @@
 
 
 var nodeunit = require('nodeunit')
+    , fs = require('fs')
     , testCase = nodeunit.testCase
     , variants = require('../lib/variants.js')
 
@@ -32,7 +33,7 @@ module.exports = testCase({
         return context['password'] === value
       }
     })
-    variants.loadFile('./custom.json')
+    loadTestData('./custom.json')
     test.equal(variants.getFlagValue('custom_value', {}), undefined)
     test.equal(variants.getFlagValue('custom_value', { password: 'wrong' }), undefined)
     test.equal(variants.getFlagValue('custom_value', { password: 'secret'}), 42)
@@ -40,4 +41,20 @@ module.exports = testCase({
   }
 })
 
-variants.loadFile('./testdata.json')
+
+/**
+ * Synchronously loads test data into memory for tests.
+ */
+function loadTestData(file) {
+  // Hack to synchronously load the file.
+  var readFile = fs.readFile
+  fs.readFile = function (file, callback) {
+    var text = fs.readFileSync(file)
+    callback(undefined, text)
+  }
+
+  variants.loadFile(file)
+  fs.readFile = readFile
+}
+
+loadTestData('./testdata.json')

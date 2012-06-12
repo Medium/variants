@@ -5,34 +5,33 @@
  */
 
 var fs = require('fs')
-    , path = require('path')
+  , path = require('path')
 
 
 /**
  * Public API. See function declarations for JSDoc.
  */
 module.exports = {
-  getFlagValue: getFlagValue
-  , loadFile: loadFile
-  , loadJson: loadJson
-  , registerConditionType: registerConditionType
+    getFlagValue: getFlagValue
+    , loadFile: loadFile
+    , loadJson: loadJson
+    , registerConditionType: registerConditionType
 }
 
 
 /**
  * Condition operators for conditional list evaluation.
- * @type {Object.<number>}
- * @enum
+ * @enum {number}
  */
 var Operators = {
-  AND: 0
-  , OR: 1
+    AND: 0
+    , OR: 1
 }
 
 
 /**
  * Map of currently registered variants.
- * @type {Object}
+ * @type {Object.<Variant>}
  */
 var registeredVariants = {}
 
@@ -60,7 +59,7 @@ var flagToVariantIdsMap = {}
  * @param {Object} context Context object that contains fields relevant to evaluating conditions
  * @return {*} Value specified in the variants JSON file or undefined if no conditions were met
  */
-function getFlagValue (flagName, context) {
+function getFlagValue(flagName, context) {
   context = context || {}
   var variantIds = flagToVariantIdsMap[flagName]
   if (!variantIds) {
@@ -86,27 +85,35 @@ function getFlagValue (flagName, context) {
 /**
  * Loads the JSON file and registers its variants.
  * @param {string} filepath JSON file to load
- * @param {callback=} callback optional callback to handle errors
+ * @param {function (Error=, Object=)} callback optional callback to handle errors
  */
-function loadFile (filepath, callback) {
-  var text = fs.readFileSync(filepath)
-  try {
-    return loadJson(JSON.parse(text), callback)
-  } catch (e) {
-    callbackOrThrow(e, callback)
-  }
+function loadFile(filepath, callback) {
+  var text = fs.readFile(filepath, function (err, text) {
+    if (err) {
+      callbackOrThrow(err, callback)
+    }
+
+    try {
+      return loadJson(JSON.parse(text), callback)
+    } catch (e) {
+      callbackOrThrow(e, callback)
+    }
+  })
 }
 
 
 /**
  * Parses the given JSON object and registers its variants.
  * @param {Object} obj JSON object to parse
- * @param {callback=} callback optional callback to handle errors
+ * @param {function (Error=, Object=)} callback optional callback to handle errors
  */
 function loadJson(obj, callback) {
   try {
     var variants = parseVariants(getRequired(obj, 'variants'))
     registerVariants(variants)
+    if (callback) {
+      callback(undefined)
+    }
   } catch (e) {
     callbackOrThrow(e, callback)
   }
@@ -121,7 +128,7 @@ function loadJson(obj, callback) {
  *     takes a context Object and returns true or false.
  *     See #registerBuiltInConditionTypes as an example.
  */
-function registerConditionType (id, fn) {
+function registerConditionType(id, fn) {
   id = id.toUpperCase()
   if (registeredConditionSpecs[id]) {
     throw new Error('Condition already registered: ' + id)
@@ -134,9 +141,12 @@ function registerConditionType (id, fn) {
  * Fully defines a variant.
  * @param {string} id
  * @param {Operator}
+ * @param {Array.<Condition>} conditions
+ * @param {Array.<Mod>} mods
  * @constructor
  */
-function Variant (id, operator, conditions, mods) {
+ // TODO(david): Move to separate file.
+function Variant(id, operator, conditions, mods) {
   this.id = id
   this.operator = operator
   this.conditions = conditions
@@ -200,7 +210,7 @@ function Condition (fn) {
  * @return {boolean}
  */
 Condition.prototype.evaluate = function(context) {
-  return !!this.fn(context)
+  return !!this.fn.call(null, context)
 }
 
 
@@ -223,7 +233,7 @@ function Mod(flagName, value) {
  */
 function callbackOrThrow(err, callback) {
   if (callback) {
-    callback(e)
+    callback(err)
     return
   }
   throw err
@@ -234,9 +244,9 @@ function callbackOrThrow(err, callback) {
  * Registers the supplied list of variants.
  * @param {Array.<Variant>} variants
  */
-function registerVariants (variants) {
+function registerVariants(variants) {
   for (var i = 0; i < variants.length; ++i) {
-    v = variants[i]
+    var v = variants[i]
     if (!!registeredVariants[v.id]) {
       throw new Error('Variant already registered with id: ' + v.id)
     }
@@ -246,7 +256,7 @@ function registerVariants (variants) {
       var flagName = v.mods[j].flagName
 
       // Simply place a marker indicating that this flag name maps to the given variant.
-      if (typeof flagToVariantIdsMap[flagName] === 'undefined') {
+      if (!(flagName in flagToVariantIdsMap)) {
         flagToVariantIdsMap[flagName] = {}
       }
       flagToVariantIdsMap[flagName][v.id] = true
@@ -258,9 +268,9 @@ function registerVariants (variants) {
 /**
  * Parses a JSON array into an array of Variants.
  * @param {Array.<Object>} array
- * @return {Array.<Variant>}
+ * @return {!Array.<Variant>}
  */
-function parseVariants (array) {
+function parseVariants(array) {
   var variants = []
   for (var i = 0; i < array.length; ++i) {
     variants.push(parseVariant(array[i]))
@@ -272,9 +282,9 @@ function parseVariants (array) {
 /**
  * Parses a JSON object into a Variant.
  * @param {Object} obj
- * @param {Variant}
+ * @return {!Variant}
  */
-function parseVariant (obj) {
+function parseVariant(obj) {
   var variantId = getRequired(obj, 'id')
   var operator = getOrDefault(obj, 'condition_operator', Operators.AND)
   var conditions = parseConditions(obj['conditions'])
@@ -286,9 +296,9 @@ function parseVariant (obj) {
 /**
  * Parses a JSON array into an array of Conditions.
  * @param {Array.<Object>} array
- * @return {Array.<Condition>}
+ * @return {!Array.<Condition>}
  */
-function parseConditions (array) {
+function parseConditions(array) {
   var conditions = []
   for (var i = 0; i < array.length; ++i) {
     conditions.push(parseCondition(array[i]))
@@ -300,9 +310,9 @@ function parseConditions (array) {
 /**
  * Parses a JSON object into a Condition.
  * @param {Object} obj
- * @param {Condition}
+ * @param {!Condition}
  */
-function parseCondition (obj) {
+function parseCondition(obj) {
   var type = getRequired(obj, 'type').toUpperCase()
   var value = getOrDefault(obj, 'value')
   var values = getOrDefault(obj, 'values', [])
@@ -321,9 +331,9 @@ function parseCondition (obj) {
 /**
  * Parses a JSON array into an array of Mods.
  * @param {Array.<Object>} array
- * @return {Array.<Mod>}
+ * @return {!Array.<Mod>}
  */
-function parseMods (array) {
+function parseMods(array) {
   var mods = []
   for (var i = 0; i < array.length; ++i) {
     var obj = array[i]
@@ -339,12 +349,13 @@ function parseMods (array) {
  * Returns the value from the map if it exists or throw an error.
  * @param {Object} obj
  * @param {string} key
+ * @return {*} the value if it exists
  */
-function getRequired (obj, key) {
-  if (typeof obj[key] === 'undefined') {
-    throw new Error('Missing required key "' + key + '" in object: ' + JSON.stringify(obj))
+function getRequired(obj, key) {
+  if (key in obj) {
+    return obj[key]
   }
-  return obj[key]
+  throw new Error('Missing required key "' + key + '" in object: ' + JSON.stringify(obj))
 }
 
 
@@ -356,10 +367,10 @@ function getRequired (obj, key) {
  * @param {*} def Default to return if the key doesn't exist in the object.
  */
 function getOrDefault(obj, key, def) {
-  if (typeof obj[key] === 'undefined') {
-    return def
+  if (key in obj) {
+    return obj[key]
   }
-  return obj[key]
+  return def
 }
 
 
