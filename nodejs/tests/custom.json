@@ -1,0 +1,19 @@
+{
+  "variants": [
+    {
+      "id": "CustomTest"
+      , "conditions": [
+        {
+          "type": "CUSTOM"
+          , "value": "secret"
+        }
+      ]
+      , "mods": [
+        {
+          "flag": "custom_value"
+          , "value": 42
+        }
+      ]
+    }
+  ]
+}
