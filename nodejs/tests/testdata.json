@@ -1,0 +1,62 @@
+{
+  "variants": [
+    {
+      "id": "AlwaysFalseTest"
+      , "conditions": [
+        {
+          "type": "RANDOM"
+          , "value": 0.0
+        }
+      ]
+      , "mods": [
+        {
+          "flag": "always_false"
+          , "value": true
+        }
+      ]
+    }
+    , {
+      "id": "AlwaysTrueTest"
+      , "conditions": [
+        {
+          "type": "RANDOM"
+          , "value": 1.0
+        }
+      ]
+      , "mods": [
+        {
+          "flag": "always_true"
+          , "value": true
+        }
+      ]
+    } , {
+      "id": "CoinFlipTest"
+      , "conditions": [
+        {
+          "type": "RANDOM"
+          , "value": 0.5
+        }
+      ]
+      , "mods": [
+        {
+          "flag": "coin_flip"
+          , "value": true
+        }
+      ]
+    } , {
+      "id": "ModRangeTest"
+      , "conditions": [
+        {
+          "type": "MOD_RANGE"
+          , "values": ["user_id", 0, 9]
+        }
+      ]
+      , "mods": [
+        {
+          "flag": "mod_range"
+          , "value": true
+        }
+      ]
+    }
+  ]
+}
