@@ -40,7 +40,39 @@ module.exports = testCase({
     test.equal(variants.getFlagValue('custom_value', { password: 'secret'}), 42)
     test.done()
   }
+
+  , testGetFlags: function (test) {
+    var flags = variants.getAllFlags()
+    test.ok(contains(flags, 'always_passes'))
+    test.ok(contains(flags, 'always_fails'))
+    test.ok(contains(flags, 'coin_flip'))
+    test.ok(contains(flags, 'mod_range'))
+    test.done()
+  }
+
+  , testGetVariants: function (test) {
+    var list = variants.getAllVariants()
+    var variant;
+    for (var i = 0; i < list.length; ++i) {
+      if (list[i].getId() == 'CoinFlipTest') {
+        variant = list[i]
+        break
+      }
+    }
+    test.ok(!!variant)
+    test.done()
+  }
 })
+
+
+function contains(list, value) {
+  for (var i = 0; i < list.length; ++i) {
+    if (list[i] === value) {
+      return true
+    }
+  }
+  return false
+}
 
 
 /**
