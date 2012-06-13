@@ -1,7 +1,7 @@
 {
   "variants": [
     {
-      "id": "AlwaysFalseTest"
+      "id": "AlwaysFailsTest"
       , "conditions": [
         {
           "type": "RANDOM"
@@ -10,13 +10,13 @@
       ]
       , "mods": [
         {
-          "flag": "always_false"
+          "flag": "always_fails"
           , "value": true
         }
       ]
     }
     , {
-      "id": "AlwaysTrueTest"
+      "id": "AlwaysPassesTest"
       , "conditions": [
         {
           "type": "RANDOM"
@@ -25,7 +25,7 @@
       ]
       , "mods": [
         {
-          "flag": "always_true"
+          "flag": "always_passes"
           , "value": true
         }
       ]
