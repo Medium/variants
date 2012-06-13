@@ -6,6 +6,10 @@
 
 var fs = require('fs')
   , path = require('path')
+  , Variant = require('./variant')
+  , Condition = require('./condition')
+  , Mod = require('./mod')
+  , Operators = require('./operators')
 
 
 /**
@@ -13,20 +17,12 @@ var fs = require('fs')
  */
 module.exports = {
     getFlagValue: getFlagValue
-    , registerFlag: registerFlag
-    , loadFile: loadFile
-    , loadJson: loadJson
-    , registerConditionType: registerConditionType
-}
-
-
-/**
- * Condition operators for conditional list evaluation.
- * @enum {number}
- */
-var Operators = {
-    AND: 0
-    , OR: 1
+  , getAllVariants: getAllVariants
+  , getAllFlags: getAllFlags
+  , loadFile: loadFile
+  , loadJson: loadJson
+  , registerConditionType: registerConditionType
+  , registerFlag: registerFlag
 }
 
 
@@ -62,17 +58,30 @@ var defaultValues = {}
 
 
 /**
- * Evaluates the flag value based on the given context object.
- * @param {string} flagName Name of the variant flag to get the value for
- * @param {*} defaultValue Default value of the flag.
+ * Returns all of the registered variants.
+ * @return {Array.<Variant>}
  */
-function registerFlag(flagName, defaultValue) {
-  if (flagName in flagToVariantIdsMap || flagName in defaultValues) {
-    throw new Error('Variant flag already registered: ' + flagName)
+function getAllVariants() {
+  var variants = []
+  for (var k in registeredVariants) {
+    variants.push(registeredVariants[k])
   }
-  defaultValues[flagName] = defaultValue
-  flagToVariantIdsMap[flagName] = {}
+  return variants
 }
+
+
+/**
+ * Returns all of the registered flags.
+ * @return {string}
+ */
+function getAllFlags() {
+  var flags = []
+  for (var flag in flagToVariantIdsMap) {
+    flags.push(flag)
+  }
+  return flags
+}
+
 
 
 /**
@@ -143,6 +152,20 @@ function loadJson(obj, callback) {
 
 
 /**
+ * Evaluates the flag value based on the given context object.
+ * @param {string} flagName Name of the variant flag to get the value for
+ * @param {*} defaultValue Default value of the flag.
+ */
+function registerFlag(flagName, defaultValue) {
+  if (flagName in flagToVariantIdsMap || flagName in defaultValues) {
+    throw new Error('Variant flag already registered: ' + flagName)
+  }
+  defaultValues[flagName] = defaultValue
+  flagToVariantIdsMap[flagName] = {}
+}
+
+
+/**
  * Registers the condition type to be used when evaluating variants.
  * @param {string} id Case-insensitive identifier for the condition
  * @param {function(*, Array.<*>)} fn Conditional function generator which takes the
@@ -156,95 +179,6 @@ function registerConditionType(id, fn) {
     throw new Error('Condition already registered: ' + id)
   }
   registeredConditionSpecs[id] = fn
-}
-
-
-/**
- * Fully defines a variant.
- * @param {string} id
- * @param {Operator}
- * @param {Array.<Condition>} conditions
- * @param {Array.<Mod>} mods
- * @constructor
- */
- // TODO(david): Move to separate file.
-function Variant(id, operator, conditions, mods) {
-  this.id = id
-  this.operator = operator
-  this.conditions = conditions
-  this.mods = mods
-}
-
-
-/**
- * Evaluates the variant in the given context.
- * @param {Object} context Context to evaluate the variant in
- * @return {boolean} evaluation result
- */
-Variant.prototype.evaluate = function (context) {
-  if (this.operator == Operators.OR) {
-    for (var i = 0; i < this.conditions.length; ++i) {
-      if (this.conditions[i].evaluate(context)) {
-        return true
-      }
-    }
-  } else {
-    for (var i = 0; i < this.conditions.length; ++i) {
-      if (!this.conditions[i].evaluate(context)) {
-        return false
-      }
-    }
-  }
-  return true
-}
-
-
-/**
- * Returns the value of a modified flag for this variant.
- * @param {string} flagName name of the flag
- * @param {*} override value
- */
-Variant.prototype.getFlagValue = function (flagName) {
-  // TODO(david): Use a map instead of searching.
-  for (var i = 0; i < this.mods.length; ++i) {
-    var m = this.mods[i]
-    if (m.flagName === flagName) {
-      return m.value
-    }
-  }
-
-  throw new Error('Flag not found: ' + flagName)
-}
-
-
-/**
- * Condition wrapper.
- * @constructor
- */
-function Condition (fn) {
-  this.fn = fn
-}
-
-
-/**
- * Evalutes this condition in the context.
- * @param {Object} context
- * @return {boolean}
- */
-Condition.prototype.evaluate = function(context) {
-  return !!this.fn.call(null, context)
-}
-
-
-/**
- * Defines a modification to a variant flag.
- * @param {string} flagName
- * @param {*} value
- * @constructor
- */
-function Mod(flagName, value) {
-  this.flagName = flagName
-  this.value = value
 }
 
 
