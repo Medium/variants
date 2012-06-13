@@ -1,7 +1,8 @@
 // Copyright (c)2012 The Obvious Corporation
 
 /**
- * @fileoverview Defines the Variant class.
+ * @fileoverview Defines the Variant class. A variant contains a list of conditions and a set of mods.
+ * when all conditions are met, the mods take effect.
  */
 
 
@@ -61,7 +62,7 @@ Variant.prototype.evaluate = function (context) {
 /**
  * Returns the value of a modified flag for this variant.
  * @param {string} flagName name of the flag
- * @param {*} override value
+ * @return {*} override value
  */
 Variant.prototype.getFlagValue = function (flagName) {
   // TODO(david): Use a map instead of searching.

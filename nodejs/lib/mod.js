@@ -1,7 +1,8 @@
 // Copyright (c)2012 The Obvious Corporation
 
 /**
- * @fileoverview Defines the Mod class.
+ * @fileoverview Defines the Mod class. A mod defines how a flag changes. Variants contain mods
+ * that take affect when they are active.
  */
 
 

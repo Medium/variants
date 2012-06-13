@@ -1,7 +1,9 @@
 // Copyright (c)2012 The Obvious Corporation
 
 /**
- * @fileoverview Defines the Condition class.
+ * @fileoverview Defines the Condition class. Conditions wrap user defined methods that
+ * evaluate with user-defined context object. A condition must evaluate to true or false and is
+ * used by variants to determine whether or not the variant is "Active"
  */
 
 
