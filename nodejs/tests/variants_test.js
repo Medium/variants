@@ -12,8 +12,31 @@ var nodeunit = require('nodeunit')
 
 
 module.exports = testCase({
+
+  testErrorConditions: function (test) {
+    var json = {
+      variants: [{
+        id: 'Fail', 
+        conditions: [{
+            type: 'RANDOM'
+          , value: 'foo'
+          , values: ['foo']
+        }],
+        mods: [{
+            flag: 'foo'
+          , value: 'bar'
+        }]
+      }]
+    }
+    var parseError
+    variants.loadJson(json, function (err) {
+      parseError = !!err
+    })
+    test.ok(parseError)
+    test.done()
+  }
   
-  testRandom: function (test) {
+  , testRandom: function (test) {
     test.ok(variants.getFlagValue('always_passes'))
     test.equals(variants.getFlagValue('always_fails'), false)
     test.done()
