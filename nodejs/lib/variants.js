@@ -276,14 +276,17 @@ function parseCondition(obj) {
     throw new Error('Unknown condition type: ' + type)
   }
 
-  var value = getOrDefault(obj, 'value')
-  var values = getOrDefault(obj, 'values')
-  if (!!value && !!values) {
+  var value = getOrDefault(obj, 'value', null)
+  var values = getOrDefault(obj, 'values', null)
+  if (value != null && values != null) {
     throw new Error('Cannot specify both a value and array of values for: ' + type)
   }
 
-  // Only pass in either value or values, whichever was specified.
-  var input = !!value ? value : (values || [])
+  // Only pass in either value, values or null.
+  if (value == null && values == null) {
+    value = null
+  }
+  var input = (values != null) ? values : value
   var fn = registeredConditionSpecs[type](input)
   if (typeof fn !== 'function') {
     throw new Error('Condition function must return a function')
@@ -342,7 +345,7 @@ function getOrDefault(obj, key, def) {
 (function registerBuiltInConditionTypes() {
 
   // Register the RANDOM condition type.
-  registerConditionType ('RANDOM', function (value) {
+  registerConditionType('RANDOM', function (value) {
     if (value < 0 || value > 1) {
       throw new Error('Fractional value from 0-1 required')
     }
@@ -356,7 +359,7 @@ function getOrDefault(obj, key, def) {
   })
 
   // Register the UMOD_RANGE condition type.
-  registerConditionType ('MOD_RANGE', function (values) {
+  registerConditionType('MOD_RANGE', function (values) {
     if (values.length != 3) {
       throw new Error('Expected two integer range values in "values" array')
     }
