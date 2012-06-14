@@ -245,7 +245,7 @@ function parseVariants(array) {
 function parseVariant(obj) {
   var variantId = getRequired(obj, 'id')
   var operator = getOrDefault(obj, 'condition_operator', Operators.AND)
-  var conditions = parseConditions(obj['conditions'])
+  var conditions = !!obj['conditions'] ? parseConditions(obj['conditions']) : []
   var mods = parseMods(obj['mods'])
   return new Variant(variantId, operator, conditions, mods)
 }
@@ -272,13 +272,19 @@ function parseConditions(array) {
  */
 function parseCondition(obj) {
   var type = getRequired(obj, 'type').toUpperCase()
-  var value = getOrDefault(obj, 'value')
-  var values = getOrDefault(obj, 'values', [])
   if (!registeredConditionSpecs[type]) {
     throw new Error('Unknown condition type: ' + type)
   }
 
-  var fn = registeredConditionSpecs[type](value, values)
+  var value = getOrDefault(obj, 'value')
+  var values = getOrDefault(obj, 'values')
+  if (!!value && !!values) {
+    throw new Error('Cannot specify both a value and array of values for: ' + type)
+  }
+
+  // Only pass in either value or values, whichever was specified.
+  var input = !!value ? value : (values || [])
+  var fn = registeredConditionSpecs[type](input)
   if (typeof fn !== 'function') {
     throw new Error('Condition function must return a function')
   }
@@ -350,7 +356,7 @@ function getOrDefault(obj, key, def) {
   })
 
   // Register the UMOD_RANGE condition type.
-  registerConditionType ('MOD_RANGE', function (value, values) {
+  registerConditionType ('MOD_RANGE', function (values) {
     if (values.length != 3) {
       throw new Error('Expected two integer range values in "values" array')
     }
