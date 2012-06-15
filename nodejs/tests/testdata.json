@@ -1,4 +1,25 @@
 {
+  "flag_defs": [
+    {
+        "flag": "always_passes"
+      , "desc": "Always fails"
+      , "base_value": false
+    },
+    {
+        "flag": "always_fails"
+      , "desc": "Always fails"
+      , "base_value": false
+    },
+    {
+        "flag": "coin_flip"
+      , "base_value": false
+    },
+    {
+        "flag": "mod_range"
+      , "base_value": false
+    }
+  ],
+
   "variants": [
     {
       "id": "AlwaysFailsTest"
