@@ -9,6 +9,7 @@ var fs = require('fs')
   , Variant = require('./variant')
   , Condition = require('./condition')
   , Mod = require('./mod')
+  , Flag = require('./flag')
   , Operators = require('./operators')
 
 
@@ -22,7 +23,7 @@ module.exports = {
   , loadFile: loadFile
   , loadJson: loadJson
   , registerConditionType: registerConditionType
-  , registerFlag: registerFlag
+  , registerFlag: registerUserFlag
 }
 
 
@@ -41,17 +42,17 @@ var registeredConditionSpecs = {}
 
 
 /**
+ * Registered variant flags.
+ * @type {Object.<Flag>}
+ */
+var registeredFlags = {}
+
+
+/**
  * Maps flags to a set of variant ids. Used to evaluate flag values.
  * @type {Object.<Object>}
  */
 var flagToVariantIdsMap = {}
-
-
-/**
- * Registered variant flags and their default values.
- * @type {Object.<*>}
- */
-var defaultValues = {}
 
 
 // TODO(david): Add optional file watches.
@@ -97,7 +98,7 @@ function getFlagValue(flagName, context) {
   }
 
   context = context || {}
-  var value = defaultValues[flagName]
+  var value = registeredFlags[flagName].getBaseValue()
 
   // TODO(david): Partial ordering
   for (var id in variantIds) {
@@ -140,7 +141,12 @@ function loadFile(filepath, callback) {
  */
 function loadJson(obj, callback) {
   try {
-    var variants = parseVariants(getRequired(obj, 'variants'))
+    var flags = obj['flag_defs'] ? parseFlags(obj['flag_defs']) : []
+    for (var i = 0; i < flags.length; ++i) {
+      registerFlag(flags[i])
+    }
+
+    var variants = obj['variants'] ? parseVariants(obj['variants']) : []
     registerVariants(variants)
     if (callback) {
       callback(undefined)
@@ -152,16 +158,26 @@ function loadJson(obj, callback) {
 
 
 /**
- * Evaluates the flag value based on the given context object.
- * @param {string} flagName Name of the variant flag to get the value for
- * @param {*} defaultValue Default value of the flag.
+ * Creates a new flag object and registers it.
+ * @param {string} flagName Name of the variant flag
+ * @param {*} defaultValue
  */
-function registerFlag(flagName, defaultValue) {
-  if (flagName in flagToVariantIdsMap || flagName in defaultValues) {
-    throw new Error('Variant flag already registered: ' + flagName)
+function registerUserFlag(flagName, defaultValue) {
+  return registerFlag(new Flag(flagName, defaultValue))
+}
+
+
+/**
+ * Registers a flag.
+ * @param {Flag} flag
+ */
+function registerFlag(flag) {
+  var name = flag.getName()
+  if (name in flagToVariantIdsMap || name in registeredFlags) {
+    throw new Error('Variant flag already registered: ' + name)
   }
-  defaultValues[flagName] = defaultValue
-  flagToVariantIdsMap[flagName] = {}
+  registeredFlags[name] = flag
+  flagToVariantIdsMap[name] = {}
 }
 
 
@@ -196,6 +212,17 @@ function callbackOrThrow(err, callback) {
 }
 
 
+
+/**
+ * Registers a list of flags.
+ */
+function registerFlags(flags) {
+  for (var i = 0; i < flags.length; ++i) {
+    registerFlag(f[i])
+  }
+}
+
+
 /**
  * Registers the supplied list of variants.
  * @param {Array.<Variant>} variants
@@ -220,6 +247,33 @@ function registerVariants(variants) {
 
     registeredVariants[v.id] = v
   }
+}
+
+
+/**
+ * Parses a JSON array into an array of Flags.
+ * @param {Array.<Object>} array
+ * @return {!Array.<Variant>}
+ */
+function parseFlags(array) {
+  var flags = []
+  for (var i = 0; i < array.length; ++i) {
+    var f = parseFlag(array[i])
+    flags.push(f)
+  }
+  return flags
+}
+
+
+/**
+ * Parses a JSON object into a Flag.
+ * @param {Object} obj
+ * @return {!Variant}
+ */
+function parseFlag(obj) {
+  var id = getRequired(obj, 'flag')
+  var baseValue = getRequired(obj, 'base_value')
+  return new Flag(id, baseValue)
 }
 
 

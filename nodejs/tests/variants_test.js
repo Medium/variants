@@ -51,7 +51,6 @@ module.exports = testCase({
   }
 
   , testCustomCondition: function (test) {
-    variants.registerFlag('custom_value', 0)
     variants.registerConditionType('CUSTOM', function(value) {
       return function(context) {
         return context['password'] === value
@@ -113,8 +112,4 @@ function loadTestData(file) {
   fs.readFile = readFile
 }
 
-variants.registerFlag('always_passes', false)
-variants.registerFlag('always_fails', false)
-variants.registerFlag('coin_flip', false)
-variants.registerFlag('mod_range', false)
 loadTestData('./testdata.json')
