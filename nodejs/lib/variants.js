@@ -215,6 +215,7 @@ function callbackOrThrow(err, callback) {
 
 /**
  * Registers a list of flags.
+ * @param {!Array.<Flag>} flags
  */
 function registerFlags(flags) {
   for (var i = 0; i < flags.length; ++i) {

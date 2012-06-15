@@ -1,7 +1,8 @@
 // Copyright (c)2012 The Obvious Corporation
 
 /**
- * @fileoverview Defines the variant Flag class and its base value.
+ * @fileoverview Defines the variant Flag class and its base value. A variant flag is a
+ * global flag that may changes on a contextual basis based on the variants that refer to it.
  */
 
 
