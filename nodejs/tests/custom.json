@@ -1,4 +1,11 @@
 {
+  "flag_defs": [
+    {
+        "flag": "custom_value"
+      , "base_value": 0
+    }
+  ],
+
   "variants": [
     {
       "id": "CustomTest"
