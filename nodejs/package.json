@@ -16,8 +16,5 @@
   "main" : "./lib/variants.js",
   "directories": {
     "lib": "./lib"
-  },
-  "dependencies": {
-    "q": "*"
   }
 }
