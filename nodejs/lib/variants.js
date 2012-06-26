@@ -111,17 +111,8 @@ function getFlagValue(flagName, context, opt_forced) {
       throw new Error('Missing registered variant: ' + id)
     }
 
-    var forcedOn
-    var forcedOff
-    if (id in forced) {
-      if (forced[id] === true) {
-        // Forced to on, set the value to the modded value.
-        forcedOn = true
-      } else {
-        // Don't override value because this variant is forced to false.
-        forcedOff = true
-      }
-    }
+    var forcedOn = forced[id] === true
+    var forcedOff = forced[id] === false
     if (!forcedOff && (forcedOn || v.evaluate(context))) {
       value = v.getFlagValue(flagName)
     }
