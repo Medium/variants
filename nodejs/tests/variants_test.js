@@ -63,6 +63,19 @@ module.exports = testCase({
     test.done()
   }
 
+  , testForcing: function (test) {
+    test.ok(variants.getFlagValue('always_passes'))
+    test.equals(variants.getFlagValue('always_fails'), false)
+    var forced = {
+        AlwaysPassesTest: false
+      , AlwaysFailsTest: true
+    }
+    test.ok(variants.getFlagValue('always_fails', undefined, forced))
+    test.equals(variants.getFlagValue('always_passes', undefined, forced), false)
+    test.done()
+  }
+
+
   , testGetFlags: function (test) {
     var flags = variants.getAllFlags()
     test.ok(contains(flags, 'always_passes'))

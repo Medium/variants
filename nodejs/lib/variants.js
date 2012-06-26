@@ -88,16 +88,20 @@ function getAllFlags() {
 /**
  * Evaluates the flag value based on the given context object.
  * @param {string} flagName Name of the variant flag to get the value for
- * @param {Object} context Context object that contains fields relevant to evaluating conditions
+ * @param {Object} opt_context Optional context object that contains fields relevant to
+ *     evaluating conditions
+ * @param {Object.<boolean>} opt_forced Optional mp of variant ids that are forced
+ *     to either true or false.
  * @return {*} Value specified in the variants JSON file or undefined if no conditions were met
  */
-function getFlagValue(flagName, context) {
+function getFlagValue(flagName, context, opt_forced) {
   var variantIds = flagToVariantIdsMap[flagName]
   if (!variantIds) {
     throw new Error('Variant flag not defined: ' + flagName)
   }
 
   context = context || {}
+  var forced = opt_forced || {}
   var value = registeredFlags[flagName].getBaseValue()
 
   // TODO(david): Partial ordering
@@ -106,7 +110,19 @@ function getFlagValue(flagName, context) {
     if (!v) {
       throw new Error('Missing registered variant: ' + id)
     }
-    if (v.evaluate(context)) {
+
+    var forcedOn
+    var forcedOff
+    if (id in forced) {
+      if (forced[id] === true) {
+        // Forced to on, set the value to the modded value.
+        forcedOn = true
+      } else {
+        // Don't override value because this variant is forced to false.
+        forcedOff = true
+      }
+    }
+    if (!forcedOff && (forcedOn || v.evaluate(context))) {
       value = v.getFlagValue(flagName)
     }
   }
