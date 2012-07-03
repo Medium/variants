@@ -1,4 +1,4 @@
-// Copyright (c)2012 The Obvious Corporation
+// Copyright 2012 The Obvious Corporation.
 
 /**
  * @fileoverview Unit tests for variants lib. Run with `nodeunit variants_test.js`
@@ -56,7 +56,7 @@ module.exports = testCase({
         return context['password'] === value
       }
     })
-    loadTestData('./custom.json')
+    loadTestData('tests/custom.json')
     test.equal(variants.getFlagValue('custom_value', {}), 0)
     test.equal(variants.getFlagValue('custom_value', { password: 'wrong' }), 0)
     test.equal(variants.getFlagValue('custom_value', { password: 'secret'}), 42)
@@ -125,4 +125,4 @@ function loadTestData(file) {
   fs.readFile = readFile
 }
 
-loadTestData('./testdata.json')
+loadTestData('tests/testdata.json')
