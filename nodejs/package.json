@@ -1,6 +1,6 @@
 {
   "name" : "variants",
-  "version" : "0.1.5",
+  "version" : "0.2.0",
   "description" : "Framework for declaring dynamic flags based on pluggable conditions.",
   "keywords" : ["node", "variants", "experiments", "mods"],
   "repository" : {
@@ -12,6 +12,15 @@
     "name" : "David Byttow",
     "email" : "david@obvious.com",
     "url" : "https://github.com/guitardave24"
+  },
+  "licenses": [{
+    "type": "Apache 2.0",
+    "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+  }],
+  "author": {
+    "name": "David Byttow",
+    "email": "guitardave@gmail.com",
+    "url": "http://twitter.com/guitardave24"
   },
   "main" : "./lib/variants.js",
   "directories": {
