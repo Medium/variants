@@ -1,4 +1,4 @@
-// Copyright (c)2012 The Obvious Corporation
+// Copyright 2012 The Obvious Corporation.
 
 /**
  * @fileoverview Public interface exposed to users of 'variants'
@@ -73,7 +73,7 @@ function getAllVariants() {
 
 /**
  * Returns all of the registered flags.
- * @return {string}
+ * @return {Array.<string>}
  */
 function getAllFlags() {
   var flags = []
@@ -84,13 +84,12 @@ function getAllFlags() {
 }
 
 
-
 /**
  * Evaluates the flag value based on the given context object.
  * @param {string} flagName Name of the variant flag to get the value for
- * @param {Object} opt_context Optional context object that contains fields relevant to
+ * @param {Object=} opt_context Optional context object that contains fields relevant to
  *     evaluating conditions
- * @param {Object.<boolean>} opt_forced Optional mp of variant ids that are forced
+ * @param {Object.<boolean>=} opt_forced Optional map of variant ids that are forced
  *     to either true or false.
  * @return {*} Value specified in the variants JSON file or undefined if no conditions were met
  */
