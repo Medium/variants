@@ -101,7 +101,7 @@ Registry.prototype.addVariant = function(variant) {
 /**
  * Maps flags to a map of variant ids. Useful for quickly looking up which variants
  * belong to a particular flag.
- * @param {!Object.Variant>} variants map of variants
+ * @param {!Variant} variant variant to map flags for
  * @param {!Object.<Flag>} flags map of flags
  * @param {!Object.<Object.<string>>} flagToVariantIdsMap
  */
