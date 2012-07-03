@@ -17,7 +17,8 @@ var fs = require('fs')
  * Public API. See function declarations for JSDoc.
  */
 module.exports = {
-    getFlagValue: getFlagValue
+    clearAll: clearAll
+  , getFlagValue: getFlagValue
   , getAllVariants: getAllVariants
   , getAllFlags: getAllFlags
   , loadFile: loadFile
@@ -27,6 +28,13 @@ module.exports = {
   , registerConditionType: registerConditionType
   , registerFlag: registerUserFlag
 }
+
+
+/** 
+ * Global registry object that contains the current set of flags, conditions and variants.
+ * @type {!Registry}
+ */
+var globalRegistry = new Registry()
 
 
 /**
@@ -136,7 +144,13 @@ Registry.prototype.overrideFlagsAndVariants = function (registry) {
 }
 
 
-var globalRegistry = new Registry()
+/**
+ * Clears all variants and flags.
+ */
+function clearAll() {
+  globalRegistry = new Registry()
+  registerBuiltInConditionTypes()
+}
 
 
 /**
@@ -204,20 +218,16 @@ function getFlagValue(flagName, context, opt_forced) {
 /**
  * Loads the JSON file and registers its variants.
  * @param {string} filepath JSON file to load
- * @param {function (Error=, Object=)} callback optional callback to handle errors
+ * @param {function (Error=)} callback invoked when done
  * @param {Registry=} opt_registry optional registry
  */
 function loadFile(filepath, callback, opt_registry) {
-  var text = fs.readFile(filepath, function (err, text) {
-    if (err) {
-      callbackOrThrow(err, callback)
-    }
+  fs.readFile(filepath, function (err, text) {
+    if (err) return callback(err)
 
-    try {
-      return loadJson(JSON.parse(text), callback, opt_registry)
-    } catch (e) {
-      callbackOrThrow(e, callback)
-    }
+    loadJson(JSON.parse(text), function (err) {
+      callback(err)
+    }, opt_registry)
   })
 }
 
@@ -225,14 +235,12 @@ function loadFile(filepath, callback, opt_registry) {
 /**
  * Parses the given JSON object and registers its variants.
  * @param {Object} obj JSON object to parse
- * @param {function (Error=, Object=)} callback optional callback to handle errors
+ * @param {function (Error=)} callback invoked when done.
  * @param {Registry=} opt_registry optional registry
  */
 function loadJson(obj, callback, opt_registry) {
   var registry = opt_registry || globalRegistry
-
-  var newRegistry = new Registry()
-
+  var err
   try {
     var flags = obj['flag_defs'] ? parseFlags(obj['flag_defs']) : []
     for (var i = 0; i < flags.length; ++i) {
@@ -243,13 +251,10 @@ function loadJson(obj, callback, opt_registry) {
     for (var i = 0; i < variants.length; ++i) {
       registry.addVariant(variants[i])
     }
-
-    if (callback) {
-      callback(undefined)
-    }
   } catch (e) {
-    callbackOrThrow(e, callback)
+    err = e
   }
+  callback(err)
 }
 
 
@@ -260,8 +265,11 @@ function loadJson(obj, callback, opt_registry) {
  */
 function reloadFile(filepath, callback) {
   var reloaded = new Registry()
-  loadFile(filepath, callback, reloaded)
-  globalRegistry.overrideFlagsAndVariants(reloaded)
+  loadFile(filepath, function (err) {
+    if (err) return callback(err)
+    globalRegistry.overrideFlagsAndVariants(reloaded)
+    callback()
+  }, reloaded)
 }
 
 
@@ -301,20 +309,6 @@ function registerConditionType(id, fn) {
     throw new Error('Condition already registered: ' + id)
   }
   globalRegistry.conditionSpecs[id] = fn
-}
-
-
-/**
- * Invokes the given callback with the given error if exists, otherwise throws it back.
- * @param {Error} err
- * @param {Function=} callback
- */
-function callbackOrThrow(err, callback) {
-  if (callback) {
-    callback(err)
-    return
-  }
-  throw err
 }
 
 
@@ -483,7 +477,7 @@ function shallowExtend() {
 
 
 // Registers built-in condition types.
-(function registerBuiltInConditionTypes() {
+function registerBuiltInConditionTypes() {
 
   // Register the RANDOM condition type.
   registerConditionType('RANDOM', function (value) {
@@ -524,4 +518,7 @@ function shallowExtend() {
       return (mod >= rangeBegin && mod <= rangeEnd)
     }
   })
-})()
+}
+
+clearAll()
+
