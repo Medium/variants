@@ -97,6 +97,16 @@ module.exports = testCase({
     test.ok(!!variant)
     test.done()
   }
+
+  , testReloadVariants: function (test) {
+    // Reload the new test data with changed values.
+    loadTestData('tests/testdata_reloaded.json', true)
+    test.ok(variants.getFlagValue('always_passes'))
+    test.ok(variants.getFlagValue('always_fails'))
+    test.ok(variants.getFlagValue('coin_flip'))
+    test.ok(variants.getFlagValue('mod_range'))
+    test.done()
+  }
 })
 
 
@@ -113,7 +123,7 @@ function contains(list, value) {
 /**
  * Synchronously loads test data into memory for tests.
  */
-function loadTestData(file) {
+function loadTestData(file, opt_reload) {
   // Hack to synchronously load the file.
   var readFile = fs.readFile
   fs.readFile = function (file, callback) {
@@ -121,7 +131,11 @@ function loadTestData(file) {
     callback(undefined, text)
   }
 
-  variants.loadFile(file)
+  if (opt_reload) {
+    variants.reloadFile(file)
+  } else {
+    variants.loadFile(file)
+  }
   fs.readFile = readFile
 }
 
