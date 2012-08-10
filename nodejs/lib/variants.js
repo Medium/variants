@@ -17,14 +17,11 @@ var fs = require('fs')
  * Public API. See function declarations for JSDoc.
  */
 module.exports = {
-    clearAll: clearAll
-  , getFlagValue: getFlagValue
+    getFlagValue: getFlagValue
   , getAllVariants: getAllVariants
   , getAllFlags: getAllFlags
   , loadFile: loadFile
   , loadJson: loadJson
-  , reloadFile: reloadFile
-  , reloadJson: reloadJson
   , registerConditionType: registerConditionType
   , registerFlag: registerUserFlag
 }
@@ -38,94 +35,29 @@ var globalRegistry = new Registry()
 
 
 /**
- * Registry class that contains a set of registered flags, variants and conditions.
+ * Map of currently registered variants.
+ * @type {Object.<Variant>}
  */
-function Registry() {
-  /**
-   * Map of currently registered variants.
-   * @type {Object.<Variant>}
-   */
-  this.variants = {}
-
-
-  /**
-   * Registered condition specs based on type. Specs create condition functions.
-   * @type {Object.<Function>}
-   */
-  this.conditionSpecs = {}
-
-
-  /**
-   * Registered variant flags.
-   * @type {Object.<Flag>}
-   */
-  this.flags = {}
-
-
-  /**
-   * Maps flags to a set of variant ids. Used to evaluate flag values.
-   * @type {Object.<Object>}
-   */
-  this.flagToVariantIdsMap = {}
-}
+var registeredVariants = {}
 
 
 /**
- * Registers a new flag.
- * @param {!Flag} flag
+ * Registered condition specs based on type. Specs create condition functions.
+ * @type {Object.<Function>}
  */
-Registry.prototype.addFlag = function(flag) {
-  var name = flag.getName()
-  if (name in this.flags) {
-    throw new Error('Variant flag already registered: ' + name)
-  }
-  this.flags[name] = flag
-  this.flagToVariantIdsMap[name] = {}
-}
+var registeredConditionSpecs = {}
 
 
 /**
- * Registers a new variant.
- * @param {!Variant} variant
+ * Registered variant flags.
+ * @type {Object.<Flag>}
  */
-Registry.prototype.addVariant = function(variant) {
-  if (!!this.variants[variant.id]) {
-    throw new Error('Variant already registered with id: ' + variant.id)
-  }
-
-  Registry._mapVariantFlags(variant, this.flags, this.flagToVariantIdsMap)
-  this.variants[variant.id] = variant
-}
+var registeredFlags = {}
 
 
 /**
- * Maps flags to a map of variant ids. Useful for quickly looking up which variants
- * belong to a particular flag.
- * @param {!Variant} variant variant to map flags for
- * @param {!Object.<Flag>} flags map of flags
- * @param {!Object.<Object.<string>>} flagToVariantIdsMap
- */
- Registry._mapVariantFlags = function(variant, flags, flagToVariantIdsMap) {
-  for (var i = 0; i < variant.mods.length; ++i) {
-    var flagName = variant.mods[i].flagName
-
-    // Simply place a marker indicating that this flag name maps to the given variant.
-    if (!(flagName in flags)) {
-      throw new Error('Flag has not been registered: ' + flagName)
-    }
-    if (!flagToVariantIdsMap[flagName]) {
-      flagToVariantIdsMap[flagName] = {}
-    }
-    flagToVariantIdsMap[flagName][variant.id] = true
-  }
-}
-
-
-/**
- * Overrides the registry with the given registry. Will not stomp old variants or flags unless
- * specified in the new registry. If there is a failure, the registry will not be changed and
- * the old values will persist.
- * @param {!Registry} registry overrides
+ * Maps flags to a set of variant ids. Used to evaluate flag values.
+ * @type {Object.<Object>}
  */
 Registry.prototype.overrideFlagsAndVariants = function (registry) {
   // Copy old and new into temporaries to make sure there are no errors.
@@ -145,13 +77,7 @@ Registry.prototype.overrideFlagsAndVariants = function (registry) {
 }
 
 
-/**
- * Clears all variants and flags.
- */
-function clearAll() {
-  globalRegistry = new Registry()
-  registerBuiltInConditionTypes()
-}
+// TODO(david): Add optional file watches.
 
 
 /**
@@ -160,8 +86,8 @@ function clearAll() {
  */
 function getAllVariants() {
   var variants = []
-  for (var k in globalRegistry.variants) {
-    variants.push(globalRegistry.variants[k])
+  for (var k in registeredVariants) {
+    variants.push(registeredVariants[k])
   }
   return variants
 }
@@ -173,7 +99,7 @@ function getAllVariants() {
  */
 function getAllFlags() {
   var flags = []
-  for (var flag in globalRegistry.flagToVariantIdsMap) {
+  for (var flag in flagToVariantIdsMap) {
     flags.push(flag)
   }
   return flags
@@ -190,18 +116,18 @@ function getAllFlags() {
  * @return {*} Value specified in the variants JSON file or undefined if no conditions were met
  */
 function getFlagValue(flagName, context, opt_forced) {
-  var variantIds = globalRegistry.flagToVariantIdsMap[flagName]
+  var variantIds = flagToVariantIdsMap[flagName]
   if (!variantIds) {
     throw new Error('Variant flag not defined: ' + flagName)
   }
 
   context = context || {}
   var forced = opt_forced || {}
-  var value = globalRegistry.flags[flagName].getBaseValue()
+  var value = registeredFlags[flagName].getBaseValue()
 
   // TODO(david): Partial ordering
   for (var id in variantIds) {
-    var v = globalRegistry.variants[id]
+    var v = registeredVariants[id]
     if (!v) {
       throw new Error('Missing registered variant: ' + id)
     }
@@ -219,16 +145,19 @@ function getFlagValue(flagName, context, opt_forced) {
 /**
  * Loads the JSON file and registers its variants.
  * @param {string} filepath JSON file to load
- * @param {function (Error=)} callback invoked when done
- * @param {Registry=} opt_registry optional registry
+ * @param {function (Error=, Object=)} callback optional callback to handle errors
  */
-function loadFile(filepath, callback, opt_registry) {
-  fs.readFile(filepath, function (err, text) {
-    if (err) return callback(err)
+function loadFile(filepath, callback) {
+  var text = fs.readFile(filepath, function (err, text) {
+    if (err) {
+      callbackOrThrow(err, callback)
+    }
 
-    loadJson(JSON.parse(text), function (err) {
-      callback(err)
-    }, opt_registry)
+    try {
+      return loadJson(JSON.parse(text), callback)
+    } catch (e) {
+      callbackOrThrow(e, callback)
+    }
   })
 }
 
@@ -236,53 +165,23 @@ function loadFile(filepath, callback, opt_registry) {
 /**
  * Parses the given JSON object and registers its variants.
  * @param {Object} obj JSON object to parse
- * @param {function (Error=)} callback invoked when done.
- * @param {Registry=} opt_registry optional registry
+ * @param {function (Error=, Object=)} callback optional callback to handle errors
  */
-function loadJson(obj, callback, opt_registry) {
-  var registry = opt_registry || globalRegistry
-  var err
+function loadJson(obj, callback) {
   try {
     var flags = obj['flag_defs'] ? parseFlags(obj['flag_defs']) : []
     for (var i = 0; i < flags.length; ++i) {
-      registry.addFlag(flags[i])
+      registerFlag(flags[i])
     }
 
     var variants = obj['variants'] ? parseVariants(obj['variants']) : []
-    for (var i = 0; i < variants.length; ++i) {
-      registry.addVariant(variants[i])
+    registerVariants(variants)
+    if (callback) {
+      callback(undefined)
     }
   } catch (e) {
-    err = e
+    callbackOrThrow(e, callback)
   }
-  callback(err)
-}
-
-
-/**
- * Reloads the JSON file and overrides currently registered variants.
- * @param {string} filepath JSON file to load
- * @param {function (Error=, Object=)} callback optional callback to handle errors
- */
-function reloadFile(filepath, callback) {
-  var reloaded = new Registry()
-  loadFile(filepath, function (err) {
-    if (err) return callback(err)
-    globalRegistry.overrideFlagsAndVariants(reloaded)
-    callback()
-  }, reloaded)
-}
-
-
-/**
- * Reloads the given JSON object and registers its variants.
- * @param {Object} obj JSON object to parse
- * @param {function (Error=, Object=)} callback optional callback to handle errors
- */
-function reloadJson(obj, callback) {
-  var reloaded = new Registry()
-  loadJson(obj, callback, reloaded)
-  globalRegistry.overrideFlagsAndVariants(reloaded)
 }
 
 
@@ -292,7 +191,21 @@ function reloadJson(obj, callback) {
  * @param {*} defaultValue
  */
 function registerUserFlag(flagName, defaultValue) {
-  return globalRegistry.addFlag(new Flag(flagName, defaultValue))
+  return registerFlag(new Flag(flagName, defaultValue))
+}
+
+
+/**
+ * Registers a flag.
+ * @param {Flag} flag
+ */
+function registerFlag(flag) {
+  var name = flag.getName()
+  if (name in flagToVariantIdsMap || name in registeredFlags) {
+    throw new Error('Variant flag already registered: ' + name)
+  }
+  registeredFlags[name] = flag
+  flagToVariantIdsMap[name] = {}
 }
 
 
@@ -306,10 +219,63 @@ function registerUserFlag(flagName, defaultValue) {
  */
 function registerConditionType(id, fn) {
   id = id.toUpperCase()
-  if (globalRegistry.conditionSpecs[id]) {
+  if (registeredConditionSpecs[id]) {
     throw new Error('Condition already registered: ' + id)
   }
-  globalRegistry.conditionSpecs[id] = fn
+  registeredConditionSpecs[id] = fn
+}
+
+
+/**
+ * Invokes the given callback with the given error if exists, otherwise throws it back.
+ * @param {Error} err
+ * @param {Function=} callback
+ */
+function callbackOrThrow(err, callback) {
+  if (callback) {
+    callback(err)
+    return
+  }
+  throw err
+}
+
+
+
+/**
+ * Registers a list of flags.
+ * @param {!Array.<Flag>} flags
+ */
+function registerFlags(flags) {
+  for (var i = 0; i < flags.length; ++i) {
+    registerFlag(f[i])
+  }
+}
+
+
+/**
+ * Registers the supplied list of variants.
+ * @param {Array.<Variant>} variants
+ */
+function registerVariants(variants) {
+  // TODO(david): Make this non-destructive.
+  for (var i = 0; i < variants.length; ++i) {
+    var v = variants[i]
+    if (!!registeredVariants[v.id]) {
+      throw new Error('Variant already registered with id: ' + v.id)
+    }
+
+    for (var j = 0; j < v.mods.length; ++j) {
+      var flagName = v.mods[j].flagName
+
+      // Simply place a marker indicating that this flag name maps to the given variant.
+      if (!(flagName in flagToVariantIdsMap)) {
+        throw new Error('Flag has not been registered: ' + flagName)
+      }
+      flagToVariantIdsMap[flagName][v.id] = true
+    }
+
+    registeredVariants[v.id] = v
+  }
 }
 
 
@@ -389,8 +355,7 @@ function parseConditions(array) {
  */
 function parseCondition(obj) {
   var type = getRequired(obj, 'type').toUpperCase()
-
-  if (!globalRegistry.conditionSpecs[type]) {
+  if (!registeredConditionSpecs[type]) {
     throw new Error('Unknown condition type: ' + type)
   }
 
@@ -405,7 +370,7 @@ function parseCondition(obj) {
     value = null
   }
   var input = (values != null) ? values : value
-  var fn = globalRegistry.conditionSpecs[type](input)
+  var fn = registeredConditionSpecs[type](input)
   if (typeof fn !== 'function') {
     throw new Error('Condition function must return a function')
   }
@@ -459,26 +424,8 @@ function getOrDefault(obj, key, def) {
 }
 
 
-/**
- * Creates a superset of all of the passed in objects, overriding individual key/value pairs
- * for each subsequent duplicate (therefore order dependent). Returns the new object.
- * @param {Object...} arguments
- * @return {!Object}
- */
-function shallowExtend() {
-  var to = {}
-  for (var i = 0; i < arguments.length; ++i) {
-    var from = arguments[i]
-    for (var k in from) {
-      to[k] = from[k]
-    }
-  }
-  return to
-}
-
-
 // Registers built-in condition types.
-function registerBuiltInConditionTypes() {
+(function registerBuiltInConditionTypes() {
 
   // Register the RANDOM condition type.
   registerConditionType('RANDOM', function (value) {
@@ -519,7 +466,4 @@ function registerBuiltInConditionTypes() {
       return (mod >= rangeBegin && mod <= rangeEnd)
     }
   })
-}
-
-clearAll()
-
+})()
