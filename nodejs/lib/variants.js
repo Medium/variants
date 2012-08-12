@@ -30,7 +30,7 @@ module.exports = {
 }
 
 
-/** 
+/**
  * Global registry object that contains the current set of flags, conditions and variants.
  * @type {!Registry}
  */
@@ -141,6 +141,7 @@ Registry.prototype.overrideFlagsAndVariants = function (registry) {
   // By this point there was no error, so make the changes.
   this.flags = newFlags
   this.variants = newVariants
+  this.flagToVariantIdsMap = newFlagToVariantIdsMap
 }
 
 
@@ -446,7 +447,7 @@ function getRequired(obj, key) {
 
 /**
  * Returns the value from the map if it exists or the default.
- * @param {Object} obj 
+ * @param {Object} obj
  * @param {string} key
  * @param {*} def Default to return if the key doesn't exist in the object.
  */
