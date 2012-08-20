@@ -237,11 +237,13 @@ function loadFile(filepath, callback, opt_registry) {
 /**
  * Loads the JSON file synchronously and registers its variants.
  * @param {string} filepath JSON file to load
- * @param {function (Error=, Object=)} callback optional callback to handle errors
+ * @param {Registry=} opt_registry optional registry
  */
-function loadFileSync(filepath, callback) {
+function loadFileSync(filepath, opt_registry) {
   var text = fs.readFileSync(filepath, 'utf8')
-  return loadJson(JSON.parse(text))
+  return loadJson(JSON.parse(text), function (err) {
+    if (err) throw err
+  }, opt_registry)
 }
 
 
