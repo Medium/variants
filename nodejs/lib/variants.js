@@ -21,6 +21,7 @@ module.exports = {
   , getAllVariants: getAllVariants
   , getAllFlags: getAllFlags
   , loadFile: loadFile
+  , loadFileSync: loadFileSync
   , loadJson: loadJson
   , registerConditionType: registerConditionType
   , registerFlag: registerUserFlag
@@ -139,6 +140,17 @@ function getFlagValue(flagName, context, opt_forced) {
     }
   }
   return value
+}
+
+
+/**
+ * Loads the JSON file synchronously and registers its variants.
+ * @param {string} filepath JSON file to load
+ * @param {function (Error=, Object=)} callback optional callback to handle errors
+ */
+function loadFileSync(filepath, callback) {
+  var text = fs.readFileSync(filepath, 'utf8')
+  return loadJson(JSON.parse(text))
 }
 
 
