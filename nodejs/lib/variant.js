@@ -48,14 +48,15 @@ Variant.prototype.evaluate = function (context) {
         return true
       }
     }
+    return false
   } else {
     for (var i = 0; i < this.conditions.length; ++i) {
       if (!this.conditions[i].evaluate(context)) {
         return false
       }
     }
+    return true
   }
-  return true
 }
 
 
