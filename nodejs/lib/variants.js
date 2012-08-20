@@ -22,6 +22,7 @@ module.exports = {
   , getAllVariants: getAllVariants
   , getAllFlags: getAllFlags
   , loadFile: loadFile
+  , loadFileSync: loadFileSync
   , loadJson: loadJson
   , reloadFile: reloadFile
   , reloadJson: reloadJson
@@ -230,6 +231,17 @@ function loadFile(filepath, callback, opt_registry) {
       callback(err)
     }, opt_registry)
   })
+}
+
+
+/**
+ * Loads the JSON file synchronously and registers its variants.
+ * @param {string} filepath JSON file to load
+ * @param {function (Error=, Object=)} callback optional callback to handle errors
+ */
+function loadFileSync(filepath, callback) {
+  var text = fs.readFileSync(filepath, 'utf8')
+  return loadJson(JSON.parse(text))
 }
 
 
