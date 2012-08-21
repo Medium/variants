@@ -1,6 +1,6 @@
 {
   "name" : "variants",
-  "version" : "0.2.4",
+  "version" : "0.2.5",
   "description" : "Framework for declaring dynamic flags based on pluggable conditions.",
   "keywords" : ["node", "variants", "experiments", "mods"],
   "repository" : {
