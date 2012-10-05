@@ -21,7 +21,7 @@ module.exports = Variant
  */
 function Variant(id, operator, conditions, mods) {
   if (conditions && conditions.length > 1 && !operator) throw new Error('An operator must be supplied when there is more than one condition.')
-  if (operator && operator !== Operators.OR && operator !== Operators.AND) throw new Error('Expected operator to be "AND" or "OR", but got ' + this.operator + '.')
+  if (operator && operator !== Operators.OR && operator !== Operators.AND) throw new Error('Expected operator to be "AND" or "OR", but got ' + operator + '.')
 
   this.id = id
   this.operator = operator
