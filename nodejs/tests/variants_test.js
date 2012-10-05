@@ -21,7 +21,8 @@ module.exports = testCase({
   testErrorConditions: function (test) {
     var json = {
       variants: [{
-        id: 'Fail', 
+        id: 'Fail',
+        condition_operator: 'AND',
         conditions: [{
             type: 'RANDOM'
           , value: 'foo'
@@ -40,7 +41,7 @@ module.exports = testCase({
       test.done()
     })
   },
-  
+
   testRandom: function (test) {
     variants.loadFile('tests/testdata.json', function (err) {
       test.ok(!err)
@@ -57,6 +58,24 @@ module.exports = testCase({
       test.ok(variants.getFlagValue('mod_range', { user_id: 3 }))
       test.ok(variants.getFlagValue('mod_range', { user_id: 9 }))
       test.equal(variants.getFlagValue('mod_range', { user_id: 50 }), false)
+      test.done()
+    })
+  },
+
+  testOperators: function (test) {
+    variants.loadFile('tests/testdata.json', function (err) {
+      test.ok(!err)
+      test.equals(variants.getFlagValue('or_result'), true)
+      test.equals(variants.getFlagValue('and_result'), false)
+      test.done()
+    })
+  },
+
+  testNoOperator: function (test) {
+    var thrown = false
+    variants.loadFile('tests/broken_nooperator.json', function (err) {
+      // An error is expected here.
+      test.ok(!!err)
       test.done()
     })
   },
