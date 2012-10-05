@@ -28,20 +28,34 @@ module.exports = {
   , reloadJson: reloadJson
   , registerConditionType: registerConditionType
   , registerFlag: registerUserFlag
+  , getRegistryNames: getRegistryNames
+  , currentRegistry: currentRegistry
+  , setCurrentRegistry: setCurrentRegistry
 }
 
+/**
+ * A map that contains all registries that have been created.
+ * @type {Object.<Registry>}
+ */
+var registryList = {}
 
 /**
  * Global registry object that contains the current set of flags, conditions and variants.
- * @type {!Registry}
+ * @type {Registry}
  */
-var globalRegistry = new Registry()
+var globalRegistry = null
+
+
+// Call 'clearAll' in order to set ourselves to the initial state, with a single main registry.
+clearAll()
 
 
 /**
  * Registry class that contains a set of registered flags, variants and conditions.
  */
-function Registry() {
+function Registry(name) {
+  if (!!registryList[name]) throw new Error('A registry with the name ' + name + ' already exists.')
+
   /**
    * Map of currently registered variants.
    * @type {Object.<Variant>}
@@ -68,6 +82,14 @@ function Registry() {
    * @type {Object.<Object>}
    */
   this.flagToVariantIdsMap = {}
+
+  /**
+   * @type {string}
+   */
+  this.name = name
+
+
+  registryList[name] = this
 }
 
 
@@ -150,8 +172,9 @@ Registry.prototype.overrideFlagsAndVariants = function (registry) {
  * Clears all variants and flags.
  */
 function clearAll() {
-  globalRegistry = new Registry()
-  registerBuiltInConditionTypes()
+  registryList = {}
+  globalRegistry = null
+  setCurrentRegistry('main')
 }
 
 
@@ -224,12 +247,17 @@ function getFlagValue(flagName, context, opt_forced) {
  * @param {Registry=} opt_registry optional registry
  */
 function loadFile(filepath, callback, opt_registry) {
+  // Keep a copy of the registry that was active when the call was
+  // initiated, so that we load the JSON into the correct registry
+  // even if the registry gets switched out before the readFile completes.
+  var registry = opt_registry || globalRegistry
+
   fs.readFile(filepath, function (err, text) {
     if (err) return callback(err)
 
     loadJson(JSON.parse(text), function (err) {
       callback(err)
-    }, opt_registry)
+    }, registry)
   })
 }
 
@@ -240,10 +268,11 @@ function loadFile(filepath, callback, opt_registry) {
  * @param {Registry=} opt_registry optional registry
  */
 function loadFileSync(filepath, opt_registry) {
+  var registry = opt_registry || globalRegistry
   var text = fs.readFileSync(filepath, 'utf8')
   return loadJson(JSON.parse(text), function (err) {
     if (err) throw err
-  }, opt_registry)
+  }, registry)
 }
 
 
@@ -324,6 +353,41 @@ function registerConditionType(id, fn) {
     throw new Error('Condition already registered: ' + id)
   }
   globalRegistry.conditionSpecs[id] = fn
+}
+
+
+/**
+ * Gets an array of all the names of the registries that have already been created.
+ * @return {Array.<string>}
+ */
+function getRegistryNames() {
+  return Object.keys(registryList)
+}
+
+
+/**
+ * Gets the name of the registry that is currently being used.
+ * @return {string}
+ */
+function currentRegistry() {
+  return globalRegistry.name
+}
+
+
+/**
+ * Switches to the named registry. If a registry by that name does not exist, it
+ * is created.
+ * @return {string}
+ */
+function setCurrentRegistry(name) {
+  if (!globalRegistry || globalRegistry.name != name) {
+    if (registryList[name]) {
+      globalRegistry = registryList[name]
+    } else {
+      globalRegistry = new Registry(name)
+      registerBuiltInConditionTypes()
+    }
+  }
 }
 
 
@@ -493,7 +557,6 @@ function shallowExtend() {
 
 // Registers built-in condition types.
 function registerBuiltInConditionTypes() {
-
   // Register the RANDOM condition type.
   registerConditionType('RANDOM', function (value) {
     if (value < 0 || value > 1) {
@@ -534,6 +597,3 @@ function registerBuiltInConditionTypes() {
     }
   })
 }
-
-clearAll()
-
