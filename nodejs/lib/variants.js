@@ -43,7 +43,7 @@ var registryList = {}
  * Global registry object that contains the current set of flags, conditions and variants.
  * @type {Registry}
  */
-var globalRegistry
+var globalRegistry = null
 
 
 // Call 'clearAll' in order to set ourselves to the initial state, with a single main registry.
@@ -247,12 +247,17 @@ function getFlagValue(flagName, context, opt_forced) {
  * @param {Registry=} opt_registry optional registry
  */
 function loadFile(filepath, callback, opt_registry) {
+  // Keep a copy of the registry that was active when the call was
+  // initiated, so that we load the JSON into the correct registry
+  // even if the registry gets switched out before the readFile completes.
+  var registry = opt_registry || globalRegistry
+
   fs.readFile(filepath, function (err, text) {
     if (err) return callback(err)
 
     loadJson(JSON.parse(text), function (err) {
       callback(err)
-    }, opt_registry)
+    }, registry)
   })
 }
 
@@ -263,10 +268,11 @@ function loadFile(filepath, callback, opt_registry) {
  * @param {Registry=} opt_registry optional registry
  */
 function loadFileSync(filepath, opt_registry) {
+  var registry = opt_registry || globalRegistry
   var text = fs.readFileSync(filepath, 'utf8')
   return loadJson(JSON.parse(text), function (err) {
     if (err) throw err
-  }, opt_registry)
+  }, registry)
 }
 
 
