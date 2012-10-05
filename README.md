@@ -39,7 +39,7 @@ Variants must have a name and a list of conditions and mods. A variant must cont
 ```
 variant: {
   required string name
-  optional string conditional_operator [default = “AND”]
+  optional string conditional_operator
   optional condition[] conditions
   required mod[] mods
 }
@@ -47,7 +47,7 @@ variant: {
 
 ## Condition
 
-Conditions return true or false based on the current request object. By default, all conditions must evaluate to “true” in order to trigger the mods in a variant, but may be changed based on the conditional_operator field.
+Conditions return true or false based on the current request object. If more than one condition is supplied, then the conditional_operator (either "OR" or "AND") must be supplied.
 
 Below is a list of condition types:
 
@@ -58,11 +58,11 @@ User id is a condition that evaluates the given condition based on a list of use
 E.g.
 ```
 {
-  “type”: “USER_ID”
-  , “values”: [
-        “somedude74”
-      , “anotherdude323”
-      , “hax0r1337”
+  "type": "USER_ID"
+  , "values": [
+        "somedude74"
+      , "anotherdude323"
+      , "hax0r1337"
   ]
 }
 ```
@@ -76,8 +76,8 @@ By default, this uses the unique user id of an authenticated user. However, the 
 E.g.
 ```
 {
-    “type”: “USER_ID_MOD”
-  , “values”: [ 0, 9 ]
+    "type": "USER_ID_MOD"
+  , "values": [ 0, 9 ]
 }
 ```
 
@@ -85,13 +85,13 @@ Note: This is useful for rolling out new features, such as to 1% -> 10% -> 50% -
 
 ### RANDOM
 
-Random will randomly determine whether or not a given request is eligible for the variant. 
+Random will randomly determine whether or not a given request is eligible for the variant.
 
 E.g.
 ```
 {
-    “type”: “RANDOM”
-  , “value”: 0.25
+    "type": "RANDOM"
+  , "value": 0.25
 }
 ```
 
@@ -111,8 +111,8 @@ message Variants {
 message Variant {
 
   enum Operator {
-    AND,
-    OR
+    AND, // "AND"
+    OR   // "OR"
   }
 
   // Unique identifier

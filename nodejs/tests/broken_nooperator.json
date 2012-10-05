@@ -1,0 +1,30 @@
+{
+  "flag_defs": [
+    {
+        "flag": "broken"
+      , "base_value": false
+    }
+  ],
+
+  "variants": [
+    {
+      "id": "BrokenNoOperator"
+      , "conditions": [
+        {
+          "type": "RANDOM"
+          , "value": 0.0
+        },
+        {
+          "type": "RANDOM"
+          , "value": 1.0
+        }
+      ]
+      , "mods": [
+        {
+          "flag": "broken"
+          , "value": true
+        }
+      ]
+    }
+  ]
+}

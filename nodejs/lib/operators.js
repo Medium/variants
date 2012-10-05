@@ -8,9 +8,9 @@
 
 /**
  * Condition operators for conditional list evaluation.
- * @enum {number}
+ * @enum {string}
  */
 module.exports = {
-    AND: 0
-  , OR: 1
+    AND: "AND"
+  , OR: "OR"
 }

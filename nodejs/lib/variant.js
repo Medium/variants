@@ -20,6 +20,8 @@ module.exports = Variant
  * @constructor
  */
 function Variant(id, operator, conditions, mods) {
+  if (conditions && conditions.length > 1 && !operator) throw new Error('An operator must be supplied when there is more than one condition.')
+
   this.id = id
   this.operator = operator
   this.conditions = conditions
@@ -49,13 +51,16 @@ Variant.prototype.evaluate = function (context) {
       }
     }
     return false
-  } else {
+  } else if (this.conditions.length <= 1 || this.operator == Operators.AND) {
     for (var i = 0; i < this.conditions.length; ++i) {
       if (!this.conditions[i].evaluate(context)) {
         return false
       }
     }
     return true
+  }
+  else {
+    throw new Error('Operator not understood: ' + this.operator)
   }
 }
 

@@ -375,7 +375,7 @@ function parseVariants(array) {
  */
 function parseVariant(obj) {
   var variantId = getRequired(obj, 'id')
-  var operator = getOrDefault(obj, 'condition_operator', Operators.AND)
+  var operator = getOrDefault(obj, 'condition_operator', null)
   var conditions = !!obj['conditions'] ? parseConditions(obj['conditions']) : []
   var mods = parseMods(obj['mods'])
   return new Variant(variantId, operator, conditions, mods)
