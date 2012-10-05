@@ -26,6 +26,9 @@
   "directories": {
     "lib": "./lib"
   },
+  "scripts": {
+    "test": "./node_modules/.bin/nodeunit ./tests/variants_test.js"
+  },
    "devDependencies": {
     "nodeunit": "*"
   }
