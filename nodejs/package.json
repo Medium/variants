@@ -1,6 +1,6 @@
 {
   "name" : "variants",
-  "version" : "0.2.5",
+  "version" : "0.3.0",
   "description" : "Framework for declaring dynamic flags based on pluggable conditions.",
   "keywords" : ["node", "variants", "experiments", "mods"],
   "repository" : {
@@ -25,5 +25,8 @@
   "main" : "./lib/variants.js",
   "directories": {
     "lib": "./lib"
+  },
+   "devDependencies": {
+    "nodeunit": "*"
   }
 }
