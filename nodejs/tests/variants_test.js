@@ -154,6 +154,27 @@ module.exports = testCase({
         test.done()
       })
     })
+  },
+
+  testSwitchRegistries: function (test) {
+    variants.loadFile('tests/testdata.json', function (err) {
+      test.ok(!err)
+      variants.setCurrentRegistry('alt')
+      variants.loadFile('tests/altdata.json', function (err) {
+        test.ok(!err)
+
+        // In the alt data file, pass and fail are flipped.
+        test.equals(variants.getFlagValue('always_passes'), false)
+        test.equals(variants.getFlagValue('always_fails'), true)
+
+        // Switch back to the main file
+        variants.setCurrentRegistry('main')
+        test.equals(variants.getFlagValue('always_passes'), true)
+        test.equals(variants.getFlagValue('always_fails'), false)
+
+        test.done()
+      })
+    })
   }
 })
 
