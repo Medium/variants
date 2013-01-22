@@ -1,11 +1,10 @@
 # Variants
 
-This README details the Node.js implementation of Variants. For general background, see [the general README](https://github.com/Obvious/variants/)
+This README details the Node.js implementation of Variants. For general background, see [the general README](https://github.com/Obvious/variants/).
 
 ## Detailed Design
 
 The frontend server will load all defined variants to modify variant flags for individual requests.
-Format
 
 The variants are provided in a JSON file that is loaded at startup by the server and watched for changes in development.
 
@@ -14,7 +13,7 @@ Example
 {
   "variants": [
     {
-        "name": "ProductAccess"
+        "id": "ProductAccess"
       , "conditions": [
         {
           “type”: “USER_ID”
@@ -32,12 +31,12 @@ Example
       ]
     }
     , {
-        "name": "ShinyNewFeature"
+        "id": "ShinyNewFeature"
       , "conditions": [
         {
             "type": "USER_ID_MOD"
-          , “values”: [ 0, 9 ]
-          , “cookie_type”: “NSID”
+          , "values": [ 0, 9 ]
+          , "cookie_type": "NSID"
         }
       ]
       , "mods": [
@@ -50,7 +49,7 @@ Example
 }
 ```
 
-In the above example, there are two variants: “ProductAccess” and ShinyNewFeature. For some set of users, we declare that the global variable “enable_access” is set to true. Similarily, for ShinyNewFeature, a different condition is used to modify a different value, and so on.
+In the above example, there are two variants: ProductAccess and ShinyNewFeature. For some set of users, we declare that the global variable "enable_access" is set to true. Similarily, for ShinyNewFeature, a different condition is used to modify a different value, and so on.
 
 # Using Variants
 
