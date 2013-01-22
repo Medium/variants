@@ -18,7 +18,7 @@ To conditionally gate certain features, they must be protected by variant flags.
 
 ```js
 if (variants.getFlagValue("enable_product_access")) {
-  throw new Error('Authenticated failed.')
+  throw new Error(‘Authenticated failed.’)
 }
 ```
 
@@ -34,11 +34,11 @@ if (variants.getFlagValue("enable_product_access")) {
 
 Variants are globally defined objects that may optionally modify values based on some conditions. All variants are evaluated on a per request basis, which means that they are scoped to request-based values such as: user ip, specific users, groups of users, query parameters, etc.
 
-Variants must have a name and a list of conditions and mods. A variant must contain at least one mod to be valid.
+Variants must have an id and a list of conditions and mods. A variant must contain at least one mod to be valid.
 
 ```
 variant: {
-  required string name
+  required string id
   optional string conditional_operator
   optional condition[] conditions
   required mod[] mods
@@ -53,7 +53,7 @@ Below is a list of condition types:
 
 ### USER_ID
 
-User id is a condition that evaluates the given condition based on a list of usernames in the “values” field.
+User id is a condition that evaluates the given condition based on a list of usernames in the "values" field.
 
 E.g.
 ```
@@ -69,9 +69,9 @@ E.g.
 
 ### USER_ID_MOD
 
-User id mods use a hashed value of the current user’s username mapped onto a range from 0-99. It allows the properties “range_start” and “range_end”, which contain values between 0-99 and range_end must be greater than range_start.
+User id mods use a hashed value of the current user’s username mapped onto a range from 0-99. It allows the properties "range_start" and "range_end", which contain values between 0-99 and range_end must be greater than range_start.
 
-By default, this uses the unique user id of an authenticated user. However, the “cookie_type” field can be set to “NSID” to refer to unauthenticated users.
+By default, this uses the unique user id of an authenticated user. However, the "cookie_type" field can be set to "NSID" to refer to unauthenticated users.
 
 E.g.
 ```
@@ -115,8 +115,8 @@ message Variant {
     OR   // "OR"
   }
 
-  // Unique identifier
-  required string name;
+  // Unique identifier.
+  required string id;
 
   // Readable description of the feature.
   optional string description;
