@@ -17,11 +17,11 @@ Example
         "name": "ProductAccess"
       , "conditions": [
         {
-          “type”: “USER_ID”
-          , “values”: [
-                “somedude74”
-              , “anotherdude323”
-              , “hax0r1337”
+          "type": "USER_ID"
+          , "values": [
+                "somedude74"
+              , "anotherdude323"
+              , "hax0r1337"
           ]
         }
       ]
