@@ -18,7 +18,7 @@ To conditionally gate certain features, they must be protected by variant flags.
 
 ```js
 if (variants.getFlagValue("enable_product_access")) {
-  throw new Error(‘Authenticated failed.’)
+  throw new Error('Authenticated failed.')
 }
 ```
 
