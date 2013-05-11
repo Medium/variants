@@ -13,5 +13,8 @@ type Condition struct {
 }
 
 func (c *Condition) Evaluate(context interface{}) bool {
+	if c.Evaluator == nil {
+		return false
+	}
 	return c.Evaluator(context)
 }

@@ -82,6 +82,9 @@ func (r *Registry) FlagValue(name string) interface{} {
 }
 
 // FlagValueWithContext returns the value of a flag based on a given context object.
+// The first variant that is satisfied and has a mod associated with the given flag name
+// will be evaluated. The order of variant evaluation is nondeterministic.
+// TODO(andybons): Deterministic behavior through rule ordering.
 func (r *Registry) FlagValueWithContext(name string, context interface{}) interface{} {
 	val := r.flags[name].BaseValue
 	for variantId, _ := range r.flagToVariantIdMap[name] {
