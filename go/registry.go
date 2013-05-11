@@ -141,6 +141,8 @@ func (r *Registry) RegisterConditionType(id string, fn func(...interface{}) func
 	if _, found := r.conditionSpecs[id]; found {
 		return fmt.Errorf("Condition with id %q already registered.", id)
 	}
+	// TODO(andybons): Input checking/sanitization is left to the user to muddle around with.
+	// Determine a better way of handling bad input.
 	r.conditionSpecs[id] = fn
 	return nil
 }
