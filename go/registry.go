@@ -30,7 +30,7 @@ func NewRegistry() *Registry {
 		flags:              make(map[string]Flag),
 		flagToVariantIdMap: make(map[string]map[string]bool),
 	}
-	r.RegisterBuiltInConditionTypes()
+	r.registerBuiltInConditionTypes()
 	return r
 }
 
@@ -95,9 +95,11 @@ func (r *Registry) FlagValueWithContext(name string, context interface{}) interf
 
 // Flags returns all flags registered with the receiver.
 func (r *Registry) Flags() []Flag {
-	result := []Flag{}
+	result := make([]Flag, len(r.flags))
+	i := 0
 	for _, f := range r.flags {
-		result = append(result, f)
+		result[i] = f
+		i++
 	}
 	return result
 }
@@ -122,9 +124,11 @@ func (r *Registry) AddVariant(v Variant) error {
 
 // Variants returns a slice of all variants registered with the receiver.
 func (r *Registry) Variants() []Variant {
-	result := []Variant{}
+	result := make([]Variant, len(r.variants))
+	i := 0
 	for _, v := range r.variants {
-		result = append(result, v)
+		result[i] = v
+		i++
 	}
 	return result
 }
@@ -138,7 +142,7 @@ func (r *Registry) RegisterConditionType(id string, fn func(...interface{}) func
 	return nil
 }
 
-func (r *Registry) RegisterBuiltInConditionTypes() {
+func (r *Registry) registerBuiltInConditionTypes() {
 	// Register the RANDOM condition type.
 	r.RegisterConditionType(ConditionTypeRandom, func(values ...interface{}) func(interface{}) bool {
 		v, ok := values[0].(float64)
@@ -197,11 +201,11 @@ func (r *Registry) ReloadJSON(data []byte) error {
 // config filename and the receiver, overriding any flag or variant
 // definitions present in the new config but leaving all others alone.
 func (r *Registry) ReloadConfig(filename string) error {
-	registry := NewRegistry()
-	if err := registry.LoadConfig(filename); err != nil {
+	other := NewRegistry()
+	if err := other.LoadConfig(filename); err != nil {
 		return err
 	}
-	return r.mergeRegistry(registry)
+	return r.mergeRegistry(other)
 }
 
 func (r *Registry) mergeRegistry(registry *Registry) error {
