@@ -47,7 +47,7 @@ variant: {
 
 ## Condition
 
-Conditions return true or false based on the current request object. If more than one condition is supplied, then the conditional_operator (either "OR" or "AND") defaults to "AND" if omitted.
+Conditions return true or false based on the current request object. If more than one condition is supplied, then the conditional_operator (either "OR" or "AND") must be supplied.
 
 Below is a list of condition types:
 
@@ -122,7 +122,7 @@ message Variant {
   optional string description;
 
   // Optional operator to evaluate the conditions.
-  optional Operator conditional_operator [default = AND];
+  optional Operator conditional_operator;
 
   // List of conditions to evaluate.
   repeated Condition conditions;

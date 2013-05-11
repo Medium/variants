@@ -232,8 +232,8 @@ func (r *Registry) LoadJSON(data []byte) error {
 		if len(v.Mods) == 0 {
 			return fmt.Errorf("Variant with ID %q must have at least one mod.", v.Id)
 		}
-		if len(v.ConditionalOperator) == 0 {
-			v.ConditionalOperator = ConditionalOperatorAnd
+		if len(v.Conditions) > 1 && len(v.ConditionalOperator) == 0 {
+			return fmt.Errorf("Variant with ID %q has %d conditions but no conditional operator specified.", v.Id, len(v.Conditions))
 		}
 		for i, c := range v.Conditions {
 			if len(c.Values) == 0 {

@@ -258,3 +258,10 @@ func TestNoMods(t *testing.T) {
 		t.Error("LoadConfig: Expected error for not having at least one mod in the variant.")
 	}
 }
+
+func TestNoOperator(t *testing.T) {
+	Reset()
+	if err := LoadConfig("testdata/broken_nooperator.json"); err == nil {
+		t.Error("LoadConfig: Expected error for not specifying an operator with more than one condition.")
+	}
+}

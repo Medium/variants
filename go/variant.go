@@ -28,21 +28,20 @@ func (v *Variant) FlagValue(name string) interface{} {
 // Evaluate returns the result of evaluating each condition of the
 // receiver given a context.
 func (v *Variant) Evaluate(context interface{}) bool {
-	switch v.ConditionalOperator {
-	case ConditionalOperatorOr:
-		for _, c := range v.Conditions {
-			if c.Evaluate(context) {
-				return true
-			}
-		}
-		return false
-	case ConditionalOperatorAnd:
+	if len(v.Conditions) == 1 || v.ConditionalOperator == ConditionalOperatorAnd {
 		for _, c := range v.Conditions {
 			if !c.Evaluate(context) {
 				return false
 			}
 		}
 		return true
+	} else if v.ConditionalOperator == ConditionalOperatorOr {
+		for _, c := range v.Conditions {
+			if c.Evaluate(context) {
+				return true
+			}
+		}
+		return false
 	}
 
 	return false
