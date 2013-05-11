@@ -38,7 +38,7 @@ func TestRandom(t *testing.T) {
 		"always_fails":  false,
 	}
 	for flagName, expected := range testCases {
-		v := FlagValue(flagName, nil).(bool)
+		v := FlagValue(flagName)
 		if v != expected {
 			t.Errorf("FlagValue: expected %q to return %t, got %t.", flagName, expected, v)
 		}
@@ -52,7 +52,7 @@ func TestConditionals(t *testing.T) {
 		"and_result": false,
 	}
 	for flagName, expected := range testCases {
-		v := FlagValue(flagName, nil).(bool)
+		v := FlagValue(flagName)
 		if v != expected {
 			t.Errorf("FlagValue: expected %q to return %t, got %t.", flagName, expected, v)
 		}
@@ -68,9 +68,66 @@ func TestModRange(t *testing.T) {
 		50: false,
 	}
 	for userId, expected := range testCases {
-		v := FlagValue("mod_range", map[string]int{"user_id": userId}).(bool)
+		v := FlagValueWithContext("mod_range", map[string]int{"user_id": userId})
 		if v != expected {
-			t.Errorf("FlagValue: expected mod_range to return %t, got %t.", expected, v)
+			t.Errorf("FlagValueWithContext: expected mod_range to return %t, got %t.", expected, v)
+		}
+	}
+}
+
+func TestLoadJSON(t *testing.T) {
+	Reset()
+	RegisterConditionType("CUSTOM", func(values ...interface{}) func(interface{}) bool {
+		usernames := []string{}
+		for _, v := range values {
+			usernames = append(usernames, v.(string))
+		}
+
+		return func(context interface{}) bool {
+			c := context.(map[string]string)
+			for _, u := range usernames {
+				if c["username"] == u {
+					return true
+				}
+			}
+			return false
+		}
+	})
+	json := `{
+	  "flag_defs": [{
+	    "flag": "enable_new_hotness_feature",
+	    "base_value": false
+	  }],
+
+	  "variants": [{
+	    "id": "EnableNewHotnessFeature",
+	    "conditions": [{
+	      "type": "CUSTOM",
+	      "values": [
+	        "andybons",
+	        "pupius",
+	        "guitardave24"
+	      ]
+	    }],
+
+	    "mods": [{
+	      "flag": "enable_new_hotness_feature",
+	      "value": true
+	    }]
+	  }]
+	}`
+	if err := LoadJSON([]byte(json)); err != nil {
+		t.Errorf("LoadJSON: expected no error, but got %q.", err.Error())
+	}
+	testCases := map[string]bool{
+		"andybons":  true,
+		"sjkaliski": false,
+	}
+	for uname, expected := range testCases {
+		ctx := map[string]string{"username": uname}
+		actual := FlagValueWithContext("enable_new_hotness_feature", ctx)
+		if expected != actual {
+			t.Errorf("FlagValueWithContext: Expected enable_new_hotness_feature to be %t, got %t.", expected, actual)
 		}
 	}
 }
@@ -108,9 +165,9 @@ func TestCustomCondition(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		v := FlagValue("custom_value", tc.Context).(float64)
+		v := FlagValueWithContext("custom_value", tc.Context)
 		if v != tc.Expected {
-			t.Errorf("FlagValue: expected custom_value to return %f, got %f.", tc.Expected, v)
+			t.Errorf("FlagValueWithContext: expected custom_value to return %f, got %f.", tc.Expected, v)
 		}
 	}
 }
@@ -172,7 +229,7 @@ func TestReloadConfig(t *testing.T) {
 		"always_fails":  false,
 	}
 	for flagName, expected := range testCases {
-		v := FlagValue(flagName, nil).(bool)
+		v := FlagValue(flagName)
 		if v != expected {
 			t.Errorf("FlagValue: expected %q to return %t, got %t.", flagName, expected, v)
 		}
@@ -188,9 +245,16 @@ func TestReloadConfig(t *testing.T) {
 		"mod_range":     true,
 	}
 	for flagName, expected := range testCases {
-		v := FlagValue(flagName, nil).(bool)
+		v := FlagValue(flagName)
 		if v != expected {
 			t.Errorf("FlagValue: expected %q to return %t, got %t.", flagName, expected, v)
 		}
+	}
+}
+
+func TestNoMods(t *testing.T) {
+	Reset()
+	if err := LoadConfig("testdata/broken_nomods.json"); err == nil {
+		t.Error("LoadConfig: Expected error for not having at least one mod in the variant.")
 	}
 }

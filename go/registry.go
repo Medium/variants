@@ -9,9 +9,7 @@ import (
 )
 
 type Registry struct {
-	Name string
-
-	// Map of currently registered variants mapped by id.
+	// Currently registered variants mapped by id.
 	variants map[string]Variant
 
 	// Registered condition specs mapped on type. Specs create condition functions.
@@ -25,9 +23,8 @@ type Registry struct {
 }
 
 // NewRegistry allocates and returns a new Registry.
-func NewRegistry(name string) *Registry {
+func NewRegistry() *Registry {
 	r := &Registry{
-		Name:               name,
 		variants:           make(map[string]Variant),
 		conditionSpecs:     make(map[string]func(...interface{}) func(interface{}) bool),
 		flags:              make(map[string]Flag),
@@ -38,14 +35,16 @@ func NewRegistry(name string) *Registry {
 }
 
 // DefaultRegistry is the default Registry used by Variants.
-var DefaultRegistry = NewRegistry("MAIN")
+var DefaultRegistry = NewRegistry()
 
-func Reset() { DefaultRegistry = NewRegistry("MAIN") }
+func Reset() { DefaultRegistry = NewRegistry() }
 
 func AddFlag(f Flag) error { return DefaultRegistry.AddFlag(f) }
 
-func FlagValue(name string, context interface{}) interface{} {
-	return DefaultRegistry.FlagValue(name, context)
+func FlagValue(name string) interface{} { return DefaultRegistry.FlagValue(name) }
+
+func FlagValueWithContext(name string, context interface{}) interface{} {
+	return DefaultRegistry.FlagValueWithContext(name, context)
 }
 
 func Flags() []Flag { return DefaultRegistry.Flags() }
@@ -60,7 +59,11 @@ func RegisterConditionType(id string, fn func(...interface{}) func(interface{}) 
 
 func LoadConfig(filename string) error { return DefaultRegistry.LoadConfig(filename) }
 
+func LoadJSON(data []byte) error { return DefaultRegistry.LoadJSON(data) }
+
 func ReloadConfig(filename string) error { return DefaultRegistry.ReloadConfig(filename) }
+
+func ReloadJSON(data []byte) error { return DefaultRegistry.ReloadJSON(data) }
 
 // AddFlag registers a new flag, returning an error if a flag already
 // exists with the same name.
@@ -73,8 +76,13 @@ func (r *Registry) AddFlag(f Flag) error {
 	return nil
 }
 
-// FlagValue returns the value of a flag based on a given context object.
-func (r *Registry) FlagValue(name string, context interface{}) interface{} {
+// FlagValue returns the value of a flag based on a nil context.
+func (r *Registry) FlagValue(name string) interface{} {
+	return r.FlagValueWithContext(name, nil)
+}
+
+// FlagValueWithContext returns the value of a flag based on a given context object.
+func (r *Registry) FlagValueWithContext(name string, context interface{}) interface{} {
 	val := r.flags[name].BaseValue
 	for variantId, _ := range r.flagToVariantIdMap[name] {
 		variant := r.variants[variantId]
@@ -174,14 +182,29 @@ type ConfigFile struct {
 	Variants []Variant `json:"variants"`
 }
 
+// ReloadJSON constructs a union of the registry created by the given
+// JSON byte array and the receiver, overriding any flag or variant
+// definitions present inthe new config but leaving all others alone.
+func (r *Registry) ReloadJSON(data []byte) error {
+	registry := NewRegistry()
+	if err := registry.LoadJSON(data); err != nil {
+		return err
+	}
+	return r.mergeRegistry(registry)
+}
+
 // ReloadConfig constructs a union of the registry created by the given
 // config filename and the receiver, overriding any flag or variant
 // definitions present in the new config but leaving all others alone.
 func (r *Registry) ReloadConfig(filename string) error {
-	registry := NewRegistry("NEW")
+	registry := NewRegistry()
 	if err := registry.LoadConfig(filename); err != nil {
 		return err
 	}
+	return r.mergeRegistry(registry)
+}
+
+func (r *Registry) mergeRegistry(registry *Registry) error {
 	for _, flag := range registry.Flags() {
 		delete(r.flags, flag.Name)
 		r.AddFlag(flag)
@@ -193,13 +216,9 @@ func (r *Registry) ReloadConfig(filename string) error {
 	return nil
 }
 
-// LoadFile reads a JSON-encoded file containing flags and variants
+// LoadJSON reads a byte array of JSON containing flags and variants
 // and registers them with the receiver.
-func (r *Registry) LoadConfig(filename string) error {
-	data, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return err
-	}
+func (r *Registry) LoadJSON(data []byte) error {
 	config := ConfigFile{}
 	if err := json.Unmarshal(data, &config); err != nil {
 		return err
@@ -210,8 +229,11 @@ func (r *Registry) LoadConfig(filename string) error {
 		}
 	}
 	for _, v := range config.Variants {
-		if len(v.ConditionOperator) == 0 {
-			v.ConditionOperator = ConditionOperatorAnd
+		if len(v.Mods) == 0 {
+			return fmt.Errorf("Variant with ID %q must have at least one mod.", v.Id)
+		}
+		if len(v.ConditionalOperator) == 0 {
+			v.ConditionalOperator = ConditionalOperatorAnd
 		}
 		for i, c := range v.Conditions {
 			if len(c.Values) == 0 {
@@ -226,4 +248,14 @@ func (r *Registry) LoadConfig(filename string) error {
 		}
 	}
 	return nil
+}
+
+// LoadFile reads a JSON-encoded file containing flags and variants
+// and registers them with the receiver.
+func (r *Registry) LoadConfig(filename string) error {
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+	return r.LoadJSON(data)
 }
