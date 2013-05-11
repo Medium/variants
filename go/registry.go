@@ -11,46 +11,48 @@ import (
 type Registry struct {
 	Name string
 
-	// Map of currently registered variants.
-	Variants map[string]Variant
+	// Map of currently registered variants mapped by id.
+	variants map[string]Variant
 
-	// Registered condition specs based on type. Specs create condition functions.
-	ConditionSpecs map[string]func(...interface{}) func(interface{}) bool
+	// Registered condition specs mapped on type. Specs create condition functions.
+	conditionSpecs map[string]func(...interface{}) func(interface{}) bool
 
-	// Registered variant flags.
-	Flags map[string]Flag
+	// Registered variant flags mapped by name.
+	flags map[string]Flag
 
 	// Maps flag names to a set of variant ids. Used to evaluate flag values.
-	FlagToVariantIdMap map[string]map[string]bool
+	flagToVariantIdMap map[string]map[string]bool
 }
 
 // NewRegistry allocates and returns a new Registry.
 func NewRegistry(name string) *Registry {
 	r := &Registry{
 		Name:               name,
-		Variants:           make(map[string]Variant),
-		ConditionSpecs:     make(map[string]func(...interface{}) func(interface{}) bool),
-		Flags:              make(map[string]Flag),
-		FlagToVariantIdMap: make(map[string]map[string]bool),
+		variants:           make(map[string]Variant),
+		conditionSpecs:     make(map[string]func(...interface{}) func(interface{}) bool),
+		flags:              make(map[string]Flag),
+		flagToVariantIdMap: make(map[string]map[string]bool),
 	}
 	r.RegisterBuiltInConditionTypes()
 	return r
 }
 
-// DefaultRegistry is the default Regsitry used by Variants.
+// DefaultRegistry is the default Registry used by Variants.
 var DefaultRegistry = NewRegistry("MAIN")
 
-func Reset() {
-	DefaultRegistry = NewRegistry("MAIN")
-}
+func Reset() { DefaultRegistry = NewRegistry("MAIN") }
 
 func AddFlag(f Flag) error { return DefaultRegistry.AddFlag(f) }
 
-func GetFlagValue(name string, context interface{}) interface{} {
-	return DefaultRegistry.GetFlagValue(name, context)
+func FlagValue(name string, context interface{}) interface{} {
+	return DefaultRegistry.FlagValue(name, context)
 }
 
+func Flags() []Flag { return DefaultRegistry.Flags() }
+
 func AddVariant(v Variant) error { return DefaultRegistry.AddVariant(v) }
+
+func Variants() []Variant { return DefaultRegistry.Variants() }
 
 func RegisterConditionType(id string, fn func(...interface{}) func(interface{}) bool) error {
 	return DefaultRegistry.RegisterConditionType(id, fn)
@@ -58,53 +60,73 @@ func RegisterConditionType(id string, fn func(...interface{}) func(interface{}) 
 
 func LoadConfig(filename string) error { return DefaultRegistry.LoadConfig(filename) }
 
+func ReloadConfig(filename string) error { return DefaultRegistry.ReloadConfig(filename) }
+
 // AddFlag registers a new flag, returning an error if a flag already
 // exists with the same name.
 func (r *Registry) AddFlag(f Flag) error {
-	if _, present := r.Flags[f.Name]; present {
+	if _, present := r.flags[f.Name]; present {
 		return fmt.Errorf("Variant flag with the name %q is already registered.", f.Name)
 	}
-	r.Flags[f.Name] = f
-	r.FlagToVariantIdMap[f.Name] = make(map[string]bool)
+	r.flags[f.Name] = f
+	r.flagToVariantIdMap[f.Name] = make(map[string]bool)
 	return nil
 }
 
-// GetFlagValue returns the value of a flag based on a given context object.
-func (r *Registry) GetFlagValue(name string, context interface{}) interface{} {
-	val := r.Flags[name].BaseValue
-	for variantId, _ := range r.FlagToVariantIdMap[name] {
-		variant := r.Variants[variantId]
+// FlagValue returns the value of a flag based on a given context object.
+func (r *Registry) FlagValue(name string, context interface{}) interface{} {
+	val := r.flags[name].BaseValue
+	for variantId, _ := range r.flagToVariantIdMap[name] {
+		variant := r.variants[variantId]
 		if variant.Evaluate(context) {
-			val = variant.GetFlagValue(name)
+			val = variant.FlagValue(name)
 		}
 	}
 	return val
+}
+
+// Flags returns all flags registered with the receiver.
+func (r *Registry) Flags() []Flag {
+	result := []Flag{}
+	for _, f := range r.flags {
+		result = append(result, f)
+	}
+	return result
 }
 
 // AddVariant registers a new variant, returning an error if the flag
 // already exists with the same Id or the flag name within any of the variant's
 // mods is not registered.
 func (r *Registry) AddVariant(v Variant) error {
-	if _, found := r.Variants[v.Id]; found {
+	if _, found := r.variants[v.Id]; found {
 		return fmt.Errorf("Variant already registered with the Id %q", v.Id)
 	}
 
 	for _, m := range v.Mods {
-		if _, found := r.Flags[m.FlagName]; !found {
+		if _, found := r.flags[m.FlagName]; !found {
 			return fmt.Errorf("Flag with the name %q has not been registered.", m.FlagName)
 		}
-		r.FlagToVariantIdMap[m.FlagName][v.Id] = true
+		r.flagToVariantIdMap[m.FlagName][v.Id] = true
 	}
-	r.Variants[v.Id] = v
+	r.variants[v.Id] = v
 	return nil
+}
+
+// Variants returns a slice of all variants registered with the receiver.
+func (r *Registry) Variants() []Variant {
+	result := []Variant{}
+	for _, v := range r.variants {
+		result = append(result, v)
+	}
+	return result
 }
 
 func (r *Registry) RegisterConditionType(id string, fn func(...interface{}) func(interface{}) bool) error {
 	id = strings.ToUpper(id)
-	if _, found := r.ConditionSpecs[id]; found {
+	if _, found := r.conditionSpecs[id]; found {
 		return fmt.Errorf("Condition with id %q already registered.", id)
 	}
-	r.ConditionSpecs[id] = fn
+	r.conditionSpecs[id] = fn
 	return nil
 }
 
@@ -152,6 +174,25 @@ type ConfigFile struct {
 	Variants []Variant `json:"variants"`
 }
 
+// ReloadConfig constructs a union of the registry created by the given
+// config filename and the receiver, overriding any flag or variant
+// definitions present in the new config but leaving all others alone.
+func (r *Registry) ReloadConfig(filename string) error {
+	registry := NewRegistry("NEW")
+	if err := registry.LoadConfig(filename); err != nil {
+		return err
+	}
+	for _, flag := range registry.Flags() {
+		delete(r.flags, flag.Name)
+		r.AddFlag(flag)
+	}
+	for _, variant := range registry.Variants() {
+		delete(r.variants, variant.Id)
+		r.AddVariant(variant)
+	}
+	return nil
+}
+
 // LoadFile reads a JSON-encoded file containing flags and variants
 // and registers them with the receiver.
 func (r *Registry) LoadConfig(filename string) error {
@@ -169,14 +210,14 @@ func (r *Registry) LoadConfig(filename string) error {
 		}
 	}
 	for _, v := range config.Variants {
-		if len(v.ConditionalOperator) == 0 {
-			v.ConditionalOperator = ConditionalOperatorAnd
+		if len(v.ConditionOperator) == 0 {
+			v.ConditionOperator = ConditionOperatorAnd
 		}
 		for i, c := range v.Conditions {
 			if len(c.Values) == 0 {
 				c.Values = []interface{}{c.Value}
 			}
-			if fn, ok := r.ConditionSpecs[c.Type]; ok {
+			if fn, ok := r.conditionSpecs[c.Type]; ok {
 				v.Conditions[i].Evaluator = fn(c.Values...)
 			}
 		}

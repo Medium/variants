@@ -1,11 +1,8 @@
 package variants
 
 const (
-	ConditionTypeRandom    = "RANDOM"
-	ConditionTypeModRange  = "MOD_RANGE"
-	ConditionTypeUserId    = "USER_ID"
-	ConditionTypeUserIdMod = "USER_ID_MOD"
-	ConditionTypeUserIp    = "USER_IP"
+	ConditionTypeRandom   = "RANDOM"
+	ConditionTypeModRange = "MOD_RANGE"
 )
 
 type Condition struct {
