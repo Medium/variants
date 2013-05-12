@@ -152,7 +152,6 @@ func (r *Registry) registerBuiltInConditionTypes() {
 	r.RegisterConditionType(ConditionTypeRandom, func(values ...interface{}) func(interface{}) bool {
 		v, ok := values[0].(float64)
 		if !ok || v < 0 || v > 1 {
-			// TODO(andybons): Possibly return an error in this case.
 			return nil
 		}
 		return func(_ interface{}) bool {
@@ -163,7 +162,6 @@ func (r *Registry) registerBuiltInConditionTypes() {
 	// Register the MOD_RANGE condition type.
 	r.RegisterConditionType(ConditionTypeModRange, func(values ...interface{}) func(interface{}) bool {
 		if len(values) != 3 {
-			// TODO(andybons): Return error in this case?
 			return nil
 		}
 
