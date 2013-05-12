@@ -12,13 +12,13 @@ In web applications it is common to provide varying experiences to unique sets o
 
 Variants provide an expressive way to define and conditionally modify experimental features, which can also be forcefully adjusted (for development).
 
-Note that the following README only provides a general overview of variants, and is language independent. Currently, it is only supported in Node.js. See the specific README for more information.
+Note that the following README only provides a general overview of variants, and is language independent. Currently, there are ports written for Node.js and Go. See the implementation-specific READMEs for more information.
 
 To conditionally gate certain features, they must be protected by variant flags. Variant flags are globally unique strings that can point to a language primitive, array or object. Most commonly, variant flags are simple boolean values so that the below code is possible:
 
 ```js
-if (variants.getFlagValue("enable_product_access")) {
-  throw new Error('Authenticated failed.')
+if (variants.getFlagValue('enable_product_access')) {
+  throw Error('Authenticated failed.')
 }
 ```
 
@@ -56,13 +56,13 @@ Below is a list of condition types:
 User id is a condition that evaluates the given condition based on a list of usernames in the "values" field.
 
 E.g.
-```
+```json
 {
-  "type": "USER_ID"
-  , "values": [
-        "somedude74"
-      , "anotherdude323"
-      , "hax0r1337"
+  "type": "USER_ID",
+  "values": [
+    "somedude74",
+    "anotherdude323",
+    "hax0r1337"
   ]
 }
 ```
@@ -74,10 +74,10 @@ User id mods use a hashed value of the current user’s username mapped onto a r
 By default, this uses the unique user id of an authenticated user. However, the "cookie_type" field can be set to "NSID" to refer to unauthenticated users.
 
 E.g.
-```
+```json
 {
-    "type": "USER_ID_MOD"
-  , "values": [ 0, 9 ]
+  "type": "USER_ID_MOD",
+  "values": [ 0, 9 ]
 }
 ```
 
@@ -88,10 +88,10 @@ Note: This is useful for rolling out new features, such as to 1% -> 10% -> 50% -
 Random will randomly determine whether or not a given request is eligible for the variant.
 
 E.g.
-```
+```json
 {
-    "type": "RANDOM"
-  , "value": 0.25
+  "type": "RANDOM",
+  "value": 0.25
 }
 ```
 
@@ -122,7 +122,7 @@ message Variant {
   optional string description;
 
   // Optional operator to evaluate the conditions.
-  optional Operator conditional_operator [default = AND];
+  optional Operator conditional_operator;
 
   // List of conditions to evaluate.
   repeated Condition conditions;
