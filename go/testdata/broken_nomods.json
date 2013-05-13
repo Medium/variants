@@ -1,0 +1,14 @@
+{
+  "flag_defs": [{
+    "flag": "broken",
+    "base_value": false
+  }],
+
+  "variants": [{
+    "id": "BrokenNoMods",
+    "conditions": [{
+      "type": "RANDOM",
+      "value": 0.0
+    }]
+  }]
+}
