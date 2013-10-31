@@ -1,0 +1,21 @@
+{
+  "flag_defs": [
+    {
+        "flag": "broken"
+      , "base_value": false
+    }
+  ],
+
+  "variants": [
+    {
+      "id": "BrokenNoCondition"
+      , "condition_operator": "AND"
+      , "mods": [
+        {
+          "flag": "broken"
+          , "value": true
+        }
+      ]
+    }
+  ]
+}

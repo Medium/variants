@@ -20,7 +20,14 @@ module.exports = Variant
  * @constructor
  */
 function Variant(id, operator, conditions, mods) {
-  if (conditions && conditions.length > 1 && !operator) throw new Error('An operator must be supplied when there is more than one condition.')
+  // We should have an operator iff we have 2 or more conditions.
+  if (!!operator !== (conditions && conditions.length >= 2)) {
+    throw new Error(
+        operator ?
+        'Cannot have a variant operator without multiple conditions' :
+        'Cannot have multiple variant conditions without an operator')
+  }
+
   if (operator && operator !== Operators.OR && operator !== Operators.AND) throw new Error('Expected operator to be "AND" or "OR", but got ' + this.operator + '.')
 
   this.id = id
