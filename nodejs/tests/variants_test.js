@@ -75,7 +75,16 @@ module.exports = testCase({
     var thrown = false
     variants.loadFile('tests/broken_nooperator.json', function (err) {
       // An error is expected here.
-      test.ok(!!err)
+      test.equal('Cannot have multiple variant conditions without an operator', err.message)
+      test.done()
+    })
+  },
+
+  testNoCondition: function (test) {
+    var thrown = false
+    variants.loadFile('tests/broken_nocondition.json', function (err) {
+      // An error is expected here.
+      test.equal('Cannot have a variant operator without multiple conditions', err.message)
       test.done()
     })
   },
