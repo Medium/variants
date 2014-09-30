@@ -23,10 +23,10 @@ func TestDuplicateFlags(t *testing.T) {
 
 func TestDuplicateVariant(t *testing.T) {
 	Reset()
-	if err := AddVariant(Variant{Id: "GOOB"}); err != nil {
+	if err := AddVariant(Variant{ID: "GOOB"}); err != nil {
 		t.Errorf("AddVariant: Expected no error but got %q", err.Error())
 	}
-	if err := AddVariant(Variant{Id: "GOOB"}); err == nil {
+	if err := AddVariant(Variant{ID: "GOOB"}); err == nil {
 		t.Error("AddVariant: Expected duplicate variant error, but got nil.")
 	}
 }
@@ -67,8 +67,8 @@ func TestModRange(t *testing.T) {
 		9:  true,
 		50: false,
 	}
-	for userId, expected := range testCases {
-		v := FlagValueWithContext("mod_range", map[string]int{"user_id": userId})
+	for userID, expected := range testCases {
+		v := FlagValueWithContext("mod_range", map[string]int{"user_id": userID})
 		if v != expected {
 			t.Errorf("FlagValueWithContext: expected mod_range to return %t, got %t.", expected, v)
 		}
@@ -204,7 +204,7 @@ func TestGetVariants(t *testing.T) {
 	}
 	ids := []string{}
 	for _, v := range Variants() {
-		ids = append(ids, v.Id)
+		ids = append(ids, v.ID)
 	}
 	for _, id := range testCases {
 		if !contains(ids, id) {
