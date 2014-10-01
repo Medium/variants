@@ -8,8 +8,9 @@ import (
 	"strings"
 )
 
+// A Registry keeps track of all Flags, Conditions, and Variants.
 type Registry struct {
-	// Currently registered variants mapped by id.
+	// Currently registered variants mapped by ID.
 	variants map[string]Variant
 
 	// Registered condition specs mapped on type. Specs create condition functions.
@@ -18,17 +19,17 @@ type Registry struct {
 	// Registered variant flags mapped by name.
 	flags map[string]Flag
 
-	// Maps flag names to a set of variant ids. Used to evaluate flag values.
-	flagToVariantIdMap map[string]map[string]bool
+	// Maps flag names to a set of variant IDs. Used to evaluate flag values.
+	flagToVariantIDMap map[string]map[string]bool
 }
 
 // NewRegistry allocates and returns a new Registry.
 func NewRegistry() *Registry {
 	r := &Registry{
-		variants:           make(map[string]Variant),
-		conditionSpecs:     make(map[string]func(...interface{}) func(interface{}) bool),
-		flags:              make(map[string]Flag),
-		flagToVariantIdMap: make(map[string]map[string]bool),
+		variants:           map[string]Variant{},
+		conditionSpecs:     map[string]func(...interface{}) func(interface{}) bool{},
+		flags:              map[string]Flag{},
+		flagToVariantIDMap: map[string]map[string]bool{},
 	}
 	r.registerBuiltInConditionTypes()
 	return r
@@ -37,32 +38,48 @@ func NewRegistry() *Registry {
 // DefaultRegistry is the default Registry used by Variants.
 var DefaultRegistry = NewRegistry()
 
+// Reset clears any registered objects within the DefaultRegistry.
 func Reset() { DefaultRegistry = NewRegistry() }
 
+// AddFlag adds f to the DefaultRegistry.
 func AddFlag(f Flag) error { return DefaultRegistry.AddFlag(f) }
 
+// FlagValue returns the value of a flag with the given name from the DefaultRegistry.
 func FlagValue(name string) interface{} { return DefaultRegistry.FlagValue(name) }
 
+// FlagValueWithContext returns the value of the flag with the given name and
+// context from the DefaultRegistry.
 func FlagValueWithContext(name string, context interface{}) interface{} {
 	return DefaultRegistry.FlagValueWithContext(name, context)
 }
 
+// Flags returns all Flags registered with the DefaultRegistry.
 func Flags() []Flag { return DefaultRegistry.Flags() }
 
+// AddVariant adds v to the DefaultRegistry.
 func AddVariant(v Variant) error { return DefaultRegistry.AddVariant(v) }
 
+// Variants returns all variants registered within the DefaultRegistry.
 func Variants() []Variant { return DefaultRegistry.Variants() }
 
+// RegisterConditionType registers a Condition type with the given ID
+// and evaluating function with the DefaultRegistry.
 func RegisterConditionType(id string, fn func(...interface{}) func(interface{}) bool) error {
 	return DefaultRegistry.RegisterConditionType(id, fn)
 }
 
+// LoadConfig loads filename, a JSON-encoded set of Mods, Conditions, and Variants,
+// with the DefaultRegistry.
 func LoadConfig(filename string) error { return DefaultRegistry.LoadConfig(filename) }
 
+// LoadJSON loads data, a JSON-encoded set of Mods, Conditions, and Variants,
+// with the DefaultRegistry.
 func LoadJSON(data []byte) error { return DefaultRegistry.LoadJSON(data) }
 
+// ReloadConfig reloads the given filename config into the DefaultRegistry.
 func ReloadConfig(filename string) error { return DefaultRegistry.ReloadConfig(filename) }
 
+// ReloadJSON reloads the given JSON-encoded byte slice into the DefaultRegistry.
 func ReloadJSON(data []byte) error { return DefaultRegistry.ReloadJSON(data) }
 
 // AddFlag registers a new flag, returning an error if a flag already
@@ -72,7 +89,7 @@ func (r *Registry) AddFlag(f Flag) error {
 		return fmt.Errorf("Variant flag with the name %q is already registered.", f.Name)
 	}
 	r.flags[f.Name] = f
-	r.flagToVariantIdMap[f.Name] = make(map[string]bool)
+	r.flagToVariantIDMap[f.Name] = make(map[string]bool)
 	return nil
 }
 
@@ -87,8 +104,8 @@ func (r *Registry) FlagValue(name string) interface{} {
 // TODO(andybons): Deterministic behavior through rule ordering.
 func (r *Registry) FlagValueWithContext(name string, context interface{}) interface{} {
 	val := r.flags[name].BaseValue
-	for variantId, _ := range r.flagToVariantIdMap[name] {
-		variant := r.variants[variantId]
+	for variantID := range r.flagToVariantIDMap[name] {
+		variant := r.variants[variantID]
 		if variant.Evaluate(context) {
 			val = variant.FlagValue(name)
 		}
@@ -111,17 +128,17 @@ func (r *Registry) Flags() []Flag {
 // already exists with the same Id or the flag name within any of the variant's
 // mods is not registered.
 func (r *Registry) AddVariant(v Variant) error {
-	if _, found := r.variants[v.Id]; found {
-		return fmt.Errorf("Variant already registered with the Id %q", v.Id)
+	if _, found := r.variants[v.ID]; found {
+		return fmt.Errorf("Variant already registered with the ID %q", v.ID)
 	}
 
 	for _, m := range v.Mods {
 		if _, found := r.flags[m.FlagName]; !found {
 			return fmt.Errorf("Flag with the name %q has not been registered.", m.FlagName)
 		}
-		r.flagToVariantIdMap[m.FlagName][v.Id] = true
+		r.flagToVariantIDMap[m.FlagName][v.ID] = true
 	}
-	r.variants[v.Id] = v
+	r.variants[v.ID] = v
 	return nil
 }
 
@@ -136,6 +153,9 @@ func (r *Registry) Variants() []Variant {
 	return result
 }
 
+// RegisterConditionType registers the condition type with an ID unique to the
+// set of registered condition types with a function that determines how the
+// condition will be evaluated.
 func (r *Registry) RegisterConditionType(id string, fn func(...interface{}) func(interface{}) bool) error {
 	id = strings.ToUpper(id)
 	if _, found := r.conditionSpecs[id]; found {
@@ -147,9 +167,14 @@ func (r *Registry) RegisterConditionType(id string, fn func(...interface{}) func
 	return nil
 }
 
+const (
+	conditionTypeRandom   = "RANDOM"
+	conditionTypeModRange = "MOD_RANGE"
+)
+
 func (r *Registry) registerBuiltInConditionTypes() {
 	// Register the RANDOM condition type.
-	r.RegisterConditionType(ConditionTypeRandom, func(values ...interface{}) func(interface{}) bool {
+	r.RegisterConditionType(conditionTypeRandom, func(values ...interface{}) func(interface{}) bool {
 		v, ok := values[0].(float64)
 		if !ok || v < 0 || v > 1 {
 			return nil
@@ -160,7 +185,7 @@ func (r *Registry) registerBuiltInConditionTypes() {
 	})
 
 	// Register the MOD_RANGE condition type.
-	r.RegisterConditionType(ConditionTypeModRange, func(values ...interface{}) func(interface{}) bool {
+	r.RegisterConditionType(conditionTypeModRange, func(values ...interface{}) func(interface{}) bool {
 		if len(values) != 3 {
 			return nil
 		}
@@ -184,7 +209,7 @@ func (r *Registry) registerBuiltInConditionTypes() {
 	})
 }
 
-type ConfigFile struct {
+type configFile struct {
 	Flags    []Flag    `json:"flag_defs"`
 	Variants []Variant `json:"variants"`
 }
@@ -217,7 +242,7 @@ func (r *Registry) mergeRegistry(registry *Registry) error {
 		r.AddFlag(flag)
 	}
 	for _, variant := range registry.Variants() {
-		delete(r.variants, variant.Id)
+		delete(r.variants, variant.ID)
 		r.AddVariant(variant)
 	}
 	return nil
@@ -226,7 +251,7 @@ func (r *Registry) mergeRegistry(registry *Registry) error {
 // LoadJSON reads a byte array of JSON containing flags and variants
 // and registers them with the receiver.
 func (r *Registry) LoadJSON(data []byte) error {
-	config := ConfigFile{}
+	config := configFile{}
 	if err := json.Unmarshal(data, &config); err != nil {
 		return err
 	}
@@ -237,10 +262,10 @@ func (r *Registry) LoadJSON(data []byte) error {
 	}
 	for _, v := range config.Variants {
 		if len(v.Mods) == 0 {
-			return fmt.Errorf("Variant with ID %q must have at least one mod.", v.Id)
+			return fmt.Errorf("Variant with ID %q must have at least one mod.", v.ID)
 		}
 		if len(v.Conditions) > 1 && len(v.ConditionalOperator) == 0 {
-			return fmt.Errorf("Variant with ID %q has %d conditions but no conditional operator specified.", v.Id, len(v.Conditions))
+			return fmt.Errorf("Variant with ID %q has %d conditions but no conditional operator specified.", v.ID, len(v.Conditions))
 		}
 		for i, c := range v.Conditions {
 			if len(c.Values) == 0 {
@@ -257,7 +282,7 @@ func (r *Registry) LoadJSON(data []byte) error {
 	return nil
 }
 
-// LoadFile reads a JSON-encoded file containing flags and variants
+// LoadConfig reads a JSON-encoded file containing flags and variants
 // and registers them with the receiver.
 func (r *Registry) LoadConfig(filename string) error {
 	data, err := ioutil.ReadFile(filename)

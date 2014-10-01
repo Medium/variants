@@ -87,7 +87,7 @@ The above code evaluates the CUSTOM condition by checking to see if the value of
 ctx := map[string]string{"username": "andybons"}
 hasAccess := FlagValueWithContext("enable_new_hotness_feature", ctx) // true
 
-ctx = map[string]string{"username": "sjkaliski"}
+ctx = map[string]string{"username": "tessr"}
 hasAccess := FlagValueWithContext("enable_new_hotness_feature", ctx) // false
 ```
 
@@ -100,15 +100,11 @@ Take a look at the unit tests for a working example.
 Install variants by using the "go get" command:
 
 ```shell
-go get github.com/obvious/variants/go
+go get github.com/medium/variants/go
 ```
 
-It's probably a good idea to associate it with an alias when importing.
-
 ```go
-import (
-  variants "github.com/obvious/variants/go"
-)
+import "github.com/medium/variants/go"
 ```
 
 ## Testing
