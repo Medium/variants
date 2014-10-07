@@ -29,7 +29,7 @@ Example
 }
 ```
 
-In the above example, a flag called "ab_test" is defined, and behavior surrounding how that flag will be evaluated is defined by the variant definition below it. If the condition defined by the variant is met, then the associated mods will be realized (the flag "ab_test" will evaluate to true). The variant is using the built-in RANDOM condition type that will evaluate its result by comparing a random number between 0.0 and 1.0 to the given value (0.5 in this case). So, in practice, a call to `FlagValue("ab_test")` will return true 50% of the time.
+In the above example, a flag called "ab_test" is defined, and behavior surrounding how that flag will be evaluated is defined by the variant definition below it. If the condition defined by the variant is met, then the associated mods will be realized (the flag "ab_test" will evaluate to true). The variant is using the built-in RANDOM condition type that will evaluate its result by checking whether a random number between 0.0 and 1.0 is less than or equal to the given value (0.5 in this case). So, in practice, a call to `FlagValue("ab_test")` will return true 50% of the time.
 
 But say you don't want to use the built-in condition types...
 
@@ -60,7 +60,7 @@ Another example
 }
 ```
 
-Now, there is no built-in condition type called CUSTOM, so when the above config is loaded, bad things will happen. We need to define how a CUSTOM condition should be evaluated before the above config is loaded.
+Now, there is no built-in condition type called CUSTOM, so when the above config is loaded, bad things will happen. We need to define how a CUSTOM condition should be evaluated _before_ the above config is loaded.
 
 ```go
 RegisterConditionType("CUSTOM", func(values ...interface{}) func(interface{}) bool {
