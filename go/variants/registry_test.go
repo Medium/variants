@@ -59,6 +59,13 @@ func TestConditionals(t *testing.T) {
 	}
 }
 
+func TestNoConditionsShouldWork(t *testing.T) {
+	ResetAndLoadFile("testdata/testdata.json", t)
+	if FlagValue("no_conditions") == false {
+		t.Error("FlagValue: expected mod without condition to be applied but it was not")
+	}
+}
+
 func TestModRange(t *testing.T) {
 	ResetAndLoadFile("testdata/testdata.json", t)
 	testCases := map[int]bool{
