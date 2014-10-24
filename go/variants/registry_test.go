@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func ResetAndLoadFile(filename string, t *testing.T) {
+func resetAndLoadFile(filename string, t *testing.T) {
 	Reset()
 	if err := LoadConfig(filename); err != nil {
 		t.Fatalf("LoadConfig: Expected no error, but got %q", err.Error())
@@ -32,7 +32,7 @@ func TestDuplicateVariant(t *testing.T) {
 }
 
 func TestRandom(t *testing.T) {
-	ResetAndLoadFile("testdata/testdata.json", t)
+	resetAndLoadFile("testdata/testdata.json", t)
 	testCases := map[string]bool{
 		"always_passes": true,
 		"always_fails":  false,
@@ -46,7 +46,7 @@ func TestRandom(t *testing.T) {
 }
 
 func TestConditionals(t *testing.T) {
-	ResetAndLoadFile("testdata/testdata.json", t)
+	resetAndLoadFile("testdata/testdata.json", t)
 	testCases := map[string]bool{
 		"or_result":  true,
 		"and_result": false,
@@ -59,8 +59,15 @@ func TestConditionals(t *testing.T) {
 	}
 }
 
+func TestNoConditionsShouldWork(t *testing.T) {
+	resetAndLoadFile("testdata/testdata.json", t)
+	if FlagValue("no_conditions") == false {
+		t.Error("FlagValue: expected mod without condition to be applied but it was not")
+	}
+}
+
 func TestModRange(t *testing.T) {
-	ResetAndLoadFile("testdata/testdata.json", t)
+	resetAndLoadFile("testdata/testdata.json", t)
 	testCases := map[int]bool{
 		0:  true,
 		3:  true,
@@ -173,7 +180,7 @@ func TestCustomCondition(t *testing.T) {
 }
 
 func TestGetFlags(t *testing.T) {
-	ResetAndLoadFile("testdata/testdata.json", t)
+	resetAndLoadFile("testdata/testdata.json", t)
 
 	testCases := []string{
 		"always_passes",
@@ -193,7 +200,7 @@ func TestGetFlags(t *testing.T) {
 }
 
 func TestGetVariants(t *testing.T) {
-	ResetAndLoadFile("testdata/testdata.json", t)
+	resetAndLoadFile("testdata/testdata.json", t)
 	testCases := []string{
 		"AlwaysFailsTest",
 		"AlwaysPassesTest",
@@ -223,7 +230,7 @@ func contains(arr []string, s string) bool {
 }
 
 func TestReloadConfig(t *testing.T) {
-	ResetAndLoadFile("testdata/testdata.json", t)
+	resetAndLoadFile("testdata/testdata.json", t)
 	testCases := map[string]bool{
 		"always_passes": true,
 		"always_fails":  false,

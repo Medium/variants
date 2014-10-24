@@ -62,7 +62,7 @@ const (
 // Evaluate returns the result of evaluating each condition of the
 // receiver given a context.
 func (v *Variant) Evaluate(context interface{}) bool {
-	if len(v.Conditions) == 1 || v.ConditionalOperator == conditionalOperatorAnd {
+	if len(v.Conditions) <= 1 || v.ConditionalOperator == conditionalOperatorAnd {
 		for _, c := range v.Conditions {
 			if !c.Evaluate(context) {
 				return false

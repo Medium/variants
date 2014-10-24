@@ -19,6 +19,9 @@
   }, {
     "flag": "and_result",
     "base_value": false
+  }, {
+    "flag": "no_conditions",
+    "base_value": false
   }],
 
   "variants": [{
@@ -87,6 +90,13 @@
     }],
     "mods": [{
       "flag": "and_result",
+      "value": true
+    }]
+  }, {
+    "id": "UnconditionalTest",
+    "conditions": [],
+    "mods": [{
+      "flag": "no_conditions",
       "value": true
     }]
   }]
