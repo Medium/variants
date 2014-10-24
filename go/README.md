@@ -1,6 +1,6 @@
 # Variants
 
-This README details the Go implementation of Variants. For general background, see [the general README](https://github.com/Obvious/variants/).
+This README details the Go implementation of Variants. For general background, see [the general README](https://github.com/Medium/variants/).
 
 ## Detailed Design
 
@@ -100,11 +100,11 @@ Take a look at the unit tests for a working example.
 Install variants by using the "go get" command:
 
 ```shell
-go get github.com/medium/variants/go
+go get github.com/medium/variants/go/variants
 ```
 
 ```go
-import "github.com/medium/variants/go"
+import "github.com/medium/variants/go/variants"
 ```
 
 ## Testing
@@ -118,7 +118,7 @@ go test
 ## Contributing
 
 Questions, comments, bug reports, and pull requests are all welcome.
-Submit them at [the project on GitHub](https://github.com/Obvious/variants/).
+Submit them at [the project on GitHub](https://github.com/Medium/variants/).
 
 Bug reports that include steps-to-reproduce (including code) are the
 best. Even better, make them in the form of pull requests that update
