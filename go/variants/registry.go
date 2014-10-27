@@ -216,7 +216,7 @@ type configFile struct {
 
 // ReloadJSON constructs a union of the registry created by the given
 // JSON byte array and the receiver, overriding any flag or variant
-// definitions present inthe new config but leaving all others alone.
+// definitions present in the new config but leaving all others alone.
 func (r *Registry) ReloadJSON(data []byte) error {
 	registry := NewRegistry()
 	if err := registry.LoadJSON(data); err != nil {
