@@ -20,7 +20,7 @@ type Registry struct {
 	flags map[string]Flag
 
 	// Maps flag names to a set of variant IDs. Used to evaluate flag values.
-	flagToVariantIDMap map[string]map[string]bool
+	flagToVariantIDMap map[string]map[string]struct{}
 }
 
 // NewRegistry allocates and returns a new Registry.
@@ -29,7 +29,7 @@ func NewRegistry() *Registry {
 		variants:           map[string]Variant{},
 		conditionSpecs:     map[string]func(...interface{}) func(interface{}) bool{},
 		flags:              map[string]Flag{},
-		flagToVariantIDMap: map[string]map[string]bool{},
+		flagToVariantIDMap: map[string]map[string]struct{}{},
 	}
 	r.registerBuiltInConditionTypes()
 	return r
@@ -89,7 +89,7 @@ func (r *Registry) AddFlag(f Flag) error {
 		return fmt.Errorf("Variant flag with the name %q is already registered.", f.Name)
 	}
 	r.flags[f.Name] = f
-	r.flagToVariantIDMap[f.Name] = make(map[string]bool)
+	r.flagToVariantIDMap[f.Name] = map[string]struct{}{}
 	return nil
 }
 
@@ -136,7 +136,7 @@ func (r *Registry) AddVariant(v Variant) error {
 		if _, found := r.flags[m.FlagName]; !found {
 			return fmt.Errorf("Flag with the name %q has not been registered.", m.FlagName)
 		}
-		r.flagToVariantIDMap[m.FlagName][v.ID] = true
+		r.flagToVariantIDMap[m.FlagName][v.ID] = struct{}{}
 	}
 	r.variants[v.ID] = v
 	return nil
