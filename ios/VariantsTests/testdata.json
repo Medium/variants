@@ -1,0 +1,136 @@
+{
+  "flag_defs": [
+    {
+      "flag": "always_passes",
+      "desc": "Always passes",
+      "base_value": false
+    },
+    {
+      "flag": "always_fails",
+      "desc": "Always fails",
+      "base_value": false
+    },
+    {
+      "flag": "coin_flip",
+      "base_value": false
+    },
+    {
+      "flag": "mod_range",
+      "base_value": false
+    },
+    {
+      "flag": "or_result",
+      "base_value": false
+    },
+    {
+      "flag": "and_result",
+      "base_value": false
+    }
+  ],
+  "variants": [
+    {
+      "id": "AlwaysFailsTest",
+      "conditions": [
+        {
+          "type": "RANDOM",
+          "value": 0.0
+        }
+      ],
+      "mods": [
+        {
+          "flag": "always_fails",
+          "value": true
+        }
+      ]
+    },
+    {
+      "id": "AlwaysPassesTest",
+      "conditions": [
+        {
+          "type": "RANDOM",
+          "value": 1.0
+        }
+      ],
+      "mods": [
+        {
+          "flag": "always_passes",
+          "value": true
+        }
+      ]
+    },
+    {
+      "id": "CoinFlipTest",
+      "conditions": [
+        {
+          "type": "RANDOM",
+          "value": 0.5
+        }
+      ],
+      "mods": [
+        {
+          "flag": "coin_flip",
+          "value": true
+        }
+      ]
+    },
+    {
+      "id": "ModRangeTest",
+      "conditions": [
+        {
+          "type": "MOD_RANGE",
+          "values": [
+            "user_id",
+            0,
+            9
+          ]
+        }
+      ],
+      "mods": [
+        {
+          "flag": "mod_range",
+          "value": true
+        }
+      ]
+    },
+    {
+      "id": "OrTest",
+      "condition_operator": "OR",
+      "conditions": [
+        {
+          "type": "RANDOM",
+          "value": 0.0
+        },
+        {
+          "type": "RANDOM",
+          "value": 1.0
+        }
+      ],
+      "mods": [
+        {
+          "flag": "or_result",
+          "value": true
+        }
+      ]
+    },
+    {
+      "id": "AndTest",
+      "condition_operator": "AND",
+      "conditions": [
+        {
+          "type": "RANDOM",
+          "value": 0.0
+        },
+        {
+          "type": "RANDOM",
+          "value": 1.0
+        }
+      ],
+      "mods": [
+        {
+          "flag": "and_result",
+          "value": true
+        }
+      ]
+    }
+  ]
+}
