@@ -1,6 +1,7 @@
 package variants
 
 import (
+	"sync"
 	"testing"
 )
 
@@ -271,4 +272,20 @@ func TestNoOperator(t *testing.T) {
 	if err := LoadConfig("testdata/broken_nooperator.json"); err == nil {
 		t.Error("LoadConfig: Expected error for not specifying an operator with more than one condition.")
 	}
+}
+
+func TestRegistryDataRace(t *testing.T) {
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		ReloadConfig("testdata/testdata.json")
+		Reset()
+		wg.Done()
+	}()
+	go func() {
+		ReloadConfig("testdata/testdata_reloaded.json")
+		Reset()
+		wg.Done()
+	}()
+	wg.Wait()
 }

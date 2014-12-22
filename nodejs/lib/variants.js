@@ -571,7 +571,7 @@ function registerBuiltInConditionTypes() {
     }
   })
 
-  // Register the UMOD_RANGE condition type.
+  // Register the MOD_RANGE condition type.
   registerConditionType('MOD_RANGE', function (values) {
     if (values.length != 3) {
       throw new Error('Expected two integer range values in "values" array')

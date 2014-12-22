@@ -6,10 +6,14 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"strings"
+	"sync"
 )
 
 // A Registry keeps track of all Flags, Conditions, and Variants.
 type Registry struct {
+	// This mutex protects the fields below.
+	sync.RWMutex
+
 	// Currently registered variants mapped by ID.
 	variants map[string]Variant
 
@@ -35,56 +39,105 @@ func NewRegistry() *Registry {
 	return r
 }
 
-// DefaultRegistry is the default Registry used by Variants.
-var DefaultRegistry = NewRegistry()
+var (
+	// DefaultRegistry is the default Registry used by Variants.
+	DefaultRegistry   = NewRegistry()
+	defaultRegistryMu sync.RWMutex
+)
 
 // Reset clears any registered objects within the DefaultRegistry.
-func Reset() { DefaultRegistry = NewRegistry() }
+func Reset() {
+	defaultRegistryMu.Lock()
+	DefaultRegistry = NewRegistry()
+	defaultRegistryMu.Unlock()
+}
 
 // AddFlag adds f to the DefaultRegistry.
-func AddFlag(f Flag) error { return DefaultRegistry.AddFlag(f) }
+func AddFlag(f Flag) error {
+	defaultRegistryMu.RLock()
+	defer defaultRegistryMu.RUnlock()
+	return DefaultRegistry.AddFlag(f)
+}
 
 // FlagValue returns the value of a flag with the given name from the DefaultRegistry.
-func FlagValue(name string) interface{} { return DefaultRegistry.FlagValue(name) }
+func FlagValue(name string) interface{} {
+	defaultRegistryMu.RLock()
+	defer defaultRegistryMu.RUnlock()
+	return DefaultRegistry.FlagValue(name)
+}
 
 // FlagValueWithContext returns the value of the flag with the given name and
 // context from the DefaultRegistry.
 func FlagValueWithContext(name string, context interface{}) interface{} {
+	defaultRegistryMu.RLock()
+	defer defaultRegistryMu.RUnlock()
 	return DefaultRegistry.FlagValueWithContext(name, context)
 }
 
 // Flags returns all Flags registered with the DefaultRegistry.
-func Flags() []Flag { return DefaultRegistry.Flags() }
+func Flags() []Flag {
+	defaultRegistryMu.RLock()
+	defer defaultRegistryMu.RUnlock()
+	return DefaultRegistry.Flags()
+}
 
 // AddVariant adds v to the DefaultRegistry.
-func AddVariant(v Variant) error { return DefaultRegistry.AddVariant(v) }
+func AddVariant(v Variant) error {
+	defaultRegistryMu.RLock()
+	defer defaultRegistryMu.RUnlock()
+	return DefaultRegistry.AddVariant(v)
+}
 
 // Variants returns all variants registered within the DefaultRegistry.
-func Variants() []Variant { return DefaultRegistry.Variants() }
+func Variants() []Variant {
+	defaultRegistryMu.RLock()
+	defer defaultRegistryMu.RUnlock()
+	return DefaultRegistry.Variants()
+}
 
 // RegisterConditionType registers a Condition type with the given ID
 // and evaluating function with the DefaultRegistry.
 func RegisterConditionType(id string, fn func(...interface{}) func(interface{}) bool) error {
+	defaultRegistryMu.RLock()
+	defer defaultRegistryMu.RUnlock()
 	return DefaultRegistry.RegisterConditionType(id, fn)
 }
 
 // LoadConfig loads filename, a JSON-encoded set of Mods, Conditions, and Variants,
 // with the DefaultRegistry.
-func LoadConfig(filename string) error { return DefaultRegistry.LoadConfig(filename) }
+func LoadConfig(filename string) error {
+	defaultRegistryMu.RLock()
+	defer defaultRegistryMu.RUnlock()
+	return DefaultRegistry.LoadConfig(filename)
+}
 
 // LoadJSON loads data, a JSON-encoded set of Mods, Conditions, and Variants,
 // with the DefaultRegistry.
-func LoadJSON(data []byte) error { return DefaultRegistry.LoadJSON(data) }
+func LoadJSON(data []byte) error {
+	defaultRegistryMu.RLock()
+	defer defaultRegistryMu.RUnlock()
+	return DefaultRegistry.LoadJSON(data)
+}
 
 // ReloadConfig reloads the given filename config into the DefaultRegistry.
-func ReloadConfig(filename string) error { return DefaultRegistry.ReloadConfig(filename) }
+func ReloadConfig(filename string) error {
+	defaultRegistryMu.RLock()
+	defer defaultRegistryMu.RUnlock()
+	return DefaultRegistry.ReloadConfig(filename)
+}
 
 // ReloadJSON reloads the given JSON-encoded byte slice into the DefaultRegistry.
-func ReloadJSON(data []byte) error { return DefaultRegistry.ReloadJSON(data) }
+func ReloadJSON(data []byte) error {
+	defaultRegistryMu.RLock()
+	defer defaultRegistryMu.RUnlock()
+	return DefaultRegistry.ReloadJSON(data)
+}
 
 // AddFlag registers a new flag, returning an error if a flag already
 // exists with the same name.
 func (r *Registry) AddFlag(f Flag) error {
+	r.Lock()
+	defer r.Unlock()
 	if _, present := r.flags[f.Name]; present {
 		return fmt.Errorf("Variant flag with the name %q is already registered.", f.Name)
 	}
@@ -103,6 +156,8 @@ func (r *Registry) FlagValue(name string) interface{} {
 // will be evaluated. The order of variant evaluation is nondeterministic.
 // TODO(andybons): Deterministic behavior through rule ordering.
 func (r *Registry) FlagValueWithContext(name string, context interface{}) interface{} {
+	r.RLock()
+	defer r.RUnlock()
 	val := r.flags[name].BaseValue
 	for variantID := range r.flagToVariantIDMap[name] {
 		variant := r.variants[variantID]
@@ -115,6 +170,8 @@ func (r *Registry) FlagValueWithContext(name string, context interface{}) interf
 
 // Flags returns all flags registered with the receiver.
 func (r *Registry) Flags() []Flag {
+	r.RLock()
+	defer r.RUnlock()
 	result := make([]Flag, len(r.flags))
 	i := 0
 	for _, f := range r.flags {
@@ -128,6 +185,8 @@ func (r *Registry) Flags() []Flag {
 // already exists with the same Id or the flag name within any of the variant's
 // mods is not registered.
 func (r *Registry) AddVariant(v Variant) error {
+	r.Lock()
+	defer r.Unlock()
 	if _, found := r.variants[v.ID]; found {
 		return fmt.Errorf("Variant already registered with the ID %q", v.ID)
 	}
@@ -144,6 +203,8 @@ func (r *Registry) AddVariant(v Variant) error {
 
 // Variants returns a slice of all variants registered with the receiver.
 func (r *Registry) Variants() []Variant {
+	r.RLock()
+	defer r.RUnlock()
 	result := make([]Variant, len(r.variants))
 	i := 0
 	for _, v := range r.variants {
@@ -157,6 +218,8 @@ func (r *Registry) Variants() []Variant {
 // set of registered condition types with a function that determines how the
 // condition will be evaluated.
 func (r *Registry) RegisterConditionType(id string, fn func(...interface{}) func(interface{}) bool) error {
+	r.Lock()
+	defer r.Unlock()
 	id = strings.ToUpper(id)
 	if _, found := r.conditionSpecs[id]; found {
 		return fmt.Errorf("Condition with id %q already registered.", id)
@@ -271,9 +334,11 @@ func (r *Registry) LoadJSON(data []byte) error {
 			if len(c.Values) == 0 {
 				c.Values = []interface{}{c.Value}
 			}
+			r.Lock()
 			if fn, ok := r.conditionSpecs[c.Type]; ok {
 				v.Conditions[i].Evaluator = fn(c.Values...)
 			}
+			r.Unlock()
 		}
 		if err := r.AddVariant(v); err != nil {
 			return err
