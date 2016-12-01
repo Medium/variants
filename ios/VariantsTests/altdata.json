@@ -1,0 +1,46 @@
+{
+  "flag_defs": [
+    {
+      "flag": "always_passes",
+      "desc": "Always passes (but not really)",
+      "base_value": false
+    },
+    {
+      "flag": "always_fails",
+      "desc": "Always fails (but not really)",
+      "base_value": false
+    }
+  ],
+  "variants": [
+    {
+      "id": "BackwardsAlwaysFailsTest",
+      "conditions": [
+        {
+          "type": "RANDOM",
+          "value": 1.0
+        }
+      ],
+      "mods": [
+        {
+          "flag": "always_fails",
+          "value": true
+        }
+      ]
+    },
+    {
+      "id": "BackwardsAlwaysPassesTest",
+      "conditions": [
+        {
+          "type": "RANDOM",
+          "value": 0.0
+        }
+      ],
+      "mods": [
+        {
+          "flag": "always_passes",
+          "value": true
+        }
+      ]
+    }
+  ]
+}
