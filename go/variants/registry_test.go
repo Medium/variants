@@ -180,6 +180,45 @@ func TestCustomCondition(t *testing.T) {
 	}
 }
 
+func TestForceVariant(t *testing.T) {
+	Reset()
+	RegisterConditionType("CUSTOM", func(values ...interface{}) func(interface{}) bool {
+		value := values[0].(string)
+
+		return func(context interface{}) bool {
+			c := context.(map[string]string)
+			return c["password"] == value
+		}
+	})
+	if err := LoadConfig("testdata/custom.json"); err != nil {
+		t.Fatalf("LoadConfig: Expected no error, but got %q", err.Error())
+	}
+
+	type testCase struct {
+		Context        map[string]string
+		Expected       float64
+		ForcedVariants map[string]bool
+	}
+	testCases := []testCase{
+		testCase{
+			Context:        map[string]string{"password": "wrong"},
+			Expected:       42,
+			ForcedVariants: map[string]bool{"CustomTest": true},
+		},
+		testCase{
+			Context:        map[string]string{"password": "secret"},
+			Expected:       0,
+			ForcedVariants: map[string]bool{"CustomTest": false},
+		},
+	}
+	for _, tc := range testCases {
+		v := FlagValueWithContextWithForcedVariants("custom_value", tc.Context, tc.ForcedVariants)
+		if v != tc.Expected {
+			t.Errorf("FlagValueWithContext: expected custom_value to return %f, got %f.", tc.Expected, v)
+		}
+	}
+}
+
 func TestGetFlags(t *testing.T) {
 	resetAndLoadFile("testdata/testdata.json", t)
 
