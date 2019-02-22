@@ -74,6 +74,18 @@ func FlagValueWithContext(name string, context interface{}) interface{} {
 	return DefaultRegistry.FlagValueWithContext(name, context)
 }
 
+// FlagValueWithContextWithForcedVariants returns the value of the flag with the given name and
+// context from the DefaultRegistry. Potentially forcing a variant on or off.
+func FlagValueWithContextWithForcedVariants(
+	name string,
+	context interface{},
+	forcedVariants map[string]bool,
+) interface{} {
+	defaultRegistryMu.RLock()
+	defer defaultRegistryMu.RUnlock()
+	return DefaultRegistry.FlagValueWithContextWithForcedVariants(name, context, forcedVariants)
+}
+
 // Flags returns all Flags registered with the DefaultRegistry.
 func Flags() []Flag {
 	defaultRegistryMu.RLock()
@@ -154,14 +166,31 @@ func (r *Registry) FlagValue(name string) interface{} {
 // FlagValueWithContext returns the value of a flag based on a given context object.
 // The first variant that is satisfied and has a mod associated with the given flag name
 // will be evaluated. The order of variant evaluation is nondeterministic.
-// TODO(andybons): Deterministic behavior through rule ordering.
 func (r *Registry) FlagValueWithContext(name string, context interface{}) interface{} {
+	return r.FlagValueWithContextWithForcedVariants(name, context, nil)
+}
+
+// FlagValueWithContextWithForcedVariants returns the value of a flag based on a given context object.
+// The first variant that is satisfied and has a mod associated with the given flag name
+// will be evaluated. The order of variant evaluation is nondeterministic. A forced variant
+// can "force" the value of the flag to returned or ignored.
+// TODO(andybons): Deterministic behavior through rule ordering.
+func (r *Registry) FlagValueWithContextWithForcedVariants(
+	name string,
+	context interface{},
+	forcedVariants map[string]bool,
+) interface{} {
 	r.RLock()
 	defer r.RUnlock()
 	val := r.flags[name].BaseValue
 	for variantID := range r.flagToVariantIDMap[name] {
 		variant := r.variants[variantID]
-		if variant.Evaluate(context) {
+
+		forcedVal, found := forcedVariants[variantID]
+		forcedOn := found && forcedVal == true
+		forcedOff := found && forcedVal == false
+
+		if !forcedOff && (forcedOn || variant.Evaluate(context)) {
 			val = variant.FlagValue(name)
 		}
 	}
