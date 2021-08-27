@@ -42,6 +42,7 @@ type Variant struct {
 	Mods                []Mod
 	ConditionalOperator string `json:"condition_operator"`
 	Conditions          []Condition
+	EdgeCacheable       bool `json:"edge_cacheable"` // True when the variant's flags may affect edge cache entries
 }
 
 // FlagValue returns the value of a modified flag for the receiver.
